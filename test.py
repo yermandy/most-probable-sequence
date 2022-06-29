@@ -33,7 +33,7 @@ def draw(G):
 
     pos = nx.multipartite_layout(G, subset_key="layer")
     nx.draw(G, pos, with_labels=True)
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=lengths)
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=lengths, label_pos=0.6)
 
 
 f, y = generate_random()
@@ -50,16 +50,18 @@ G, s, t = create_graph(f)
 n = f.shape[0]
 Y = f.shape[1]
 
-for c in range((Y - 1) * (n - 1) + 2):
+# for c in range(Y * n + 2):
+for c in range(0, Y * (n - 1) + 1):
     print(c, evaluate(f, G, s, t, c))
 
 print('\nDP')
 
 F = dymanic_programming(f)
 
-for c in range(1, 7):
+for c in range(1, Y * (n - 1) + 1):
     values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
     obj = max(values)
     print(c - 1, obj)
 
+draw(G)
 # plt.show()

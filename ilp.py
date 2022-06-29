@@ -26,9 +26,10 @@ def create_f():
     # f_i(y_i = j, y_{i+1} = k)
     f = np.zeros((n, Y, Y))
     for i in range(n):
+        outputs = w @ phi[:, i]
         for j in range(Y):
             for k in range(Y):
-                f[i, j, k] = w[j + k] @ phi[:, i]
+                f[i, j, k] = outputs[j + k]
     return f
 
 
@@ -70,7 +71,6 @@ def evaluate(f, G, s, t, C = 0):
     n = f.shape[0]
     Y = f.shape[1]
 
-
     env = g.Env(empty=True)
     env.setParam("OutputFlag",0)
     env.start()
@@ -106,7 +106,7 @@ def evaluate(f, G, s, t, C = 0):
     objective = g.quicksum(x[v1, v2] * l for (v1, v2, l) in G.edges.data("length"))
 
     m.setObjective(objective, sense=g.GRB.MAXIMIZE)
-        
+    
     m.optimize()
     
     maximizers = {}
@@ -116,7 +116,6 @@ def evaluate(f, G, s, t, C = 0):
             for k in range(Y):
                 if x[i * Y + j, (i + 1) * Y + k].x > 0.5:
                     maximizers[i] = (j, k)
-                    pass
                 
     return m.objVal, maximizers
 
@@ -181,7 +180,7 @@ def find_constant(f, y):
     return constant
     
 
-def evaluate_loss(f, G, s, t, const):
+def evaluate_loss(f, G, s, t, y, const):
     n = f.shape[0]
     Y = f.shape[1]
     
@@ -212,10 +211,10 @@ def dymanic_programming(f):
     
     Fs = {}
     Is = {}
-    for k in range(2, n + 1):
-        C = (Y - 1) * (k - 1) + 1
+    for k in range(2, n + 2):
+        C = Y * (k - 1) + 1
         F = np.zeros((C, Y))
-        I = np.full((C, Y), np.nan)
+        # I = np.full((C, Y + 1), np.nan)
 
         # print(f'\n{k = }')
         # print(k)
@@ -225,13 +224,13 @@ def dymanic_programming(f):
             for y_k in range(0, Y):
                 V = -np.inf
                 for y_k_1 in range(0, min(Y, c)):
+                # for y_k_1 in range(0, Y):
 
                     if k == 2:
                         F[c, y_k] = f[k - 2, y_k_1, y_k]
-                        I[c, y_k] = y_k_1
+                        # I[c, y_k] = y_k_1
                     else:
                         # print('----')
-                        # print(Fs[k - 1].shape[0])
                         if c - y_k_1 >= Fs[k - 1].shape[0]:
                             continue
                         
@@ -239,36 +238,63 @@ def dymanic_programming(f):
                         if V_new > V:
                             V = V_new
                             F[c, y_k] = V
-                            I[c, y_k] = y_k_1
-
+                            # I[c, y_k] = y_k_1
+        # print(F)
         Fs[k] = F
-        Is[k] = I
-
-    return F
+        # Is[k] = I
+    
+    return Fs[k]
 
     
 # %%
 
 
 if __name__ == '__main__':
-    # f = create_f()
-    f = load_f('f.npy')
-    y = np.load('y.npy')
-
+    f = create_f()
+    
+    # f = load_f('f.npy')
+    # y = np.load('y.npy')
+    
+    F = dymanic_programming(f)
+    
+    n = f.shape[0]
+    Y = f.shape[1]
+    
+    # for c in range(1, Y * (n - 1) + 1):
+    
+    obj_best = -np.inf
+    c_best = None
+    
+    for c in range(1, (Y - 1) * (n - 1) + 2):
+        values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
+        obj = max(values)
+        print(c - 1, obj)
+        if obj > obj_best:
+            obj_best = obj
+            c_best = c - 1
+        
+        
+    
     G, s, t = create_graph(f)
+    
+    objective, maximizers = evaluate(f, G, s, t, c_best)
+    
+    print()
+    print(c_best)
+    print(obj_best)
+    print(objective)
+    print(maximizers)
 
     # for c in range((Y - 1) * (n - 1) + 2):
-    for c in range(10):
-        objective, maximizers = evaluate(f, G, s, t, c)
-        print(c, objective)  
+    # for c in range(100):
+    #     objective, maximizers = evaluate(f, G, s, t, c)
+    #     print(c, objective)  
 
     # len(y), y.sum()
 
     # sequence = most_probable_sequence(f)
-    
-    dymanic_programming(f)
 
     # const = find_constant(f, y)    
     
-    # evaluate_loss(f, G, s, t, const)
+    # evaluate_loss(f, G, s, t, y, const)
 # %%
