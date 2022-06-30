@@ -4,6 +4,7 @@ from tqdm import tqdm
 import networkx as nx
 import gurobipy as g
 import numba
+import matplotlib.pyplot as plt
 
 
 def create_f():
@@ -177,7 +178,7 @@ def most_probable_sequence(f):
 
 
 
-def find_constant(f, y):
+def find_true_score(f, y):
     return np.sum([f[i, y[i], y[i + 1]] for i in range(len(f))])
 
     constant = 0
@@ -188,32 +189,42 @@ def find_constant(f, y):
     return constant
     
 
-def evaluate_loss(f, G, s, t, y, const):
+def evaluate_loss(f, G, s, t, y):
     n = f.shape[0]
     Y = f.shape[1]
     
-    objective = -np.inf
+    objective_best = -np.inf
     margin_rescaling_loss = None
     c_best = None
+    score_best = None
+    
+    F = dymanic_programming(f, n, Y)
     
     c_hat = y.sum()
-    # for c in range((Y - 1) * (n - 1) + 2):
-    for c in range(200):
-        F = evaluate(f, G, s, t, c)
-        objective_new = abs(c - c_hat) / c_hat + F
-        print(c, F)
-        if objective_new > objective:
-            objective = objective_new
-            c_best = c
+    for c in range(1, (Y - 1) * (n - 1) + 2):
+        score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
+        rvce_loss = abs(c - c_hat) / c_hat
+        objective = rvce_loss + score
+        # print(c, objective)
+        if objective > objective_best:
+            objective_best = objective
+            c_best = c - 1
+            score_best = score
 
-    margin_rescaling_loss = objective - const
+    true_score = find_true_score(f, y)
     
-    print(margin_rescaling_loss, c_best)
+    margin_rescaling_loss = objective_best - true_score
     
-    return margin_rescaling_loss
+    print(margin_rescaling_loss, score_best, c_best)
+    
+    objective, maximizers = evaluate(f, G, s, t, c_best)
+    
+    # print('ilp objective', objective)
+    
+    return margin_rescaling_loss, maximizers
 
 
-@numba.jit
+@numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
     Fs = {}
     # Is = {}
@@ -222,7 +233,7 @@ def dymanic_programming(f: np.array, n: int, Y: int):
         C = Y * (k - 1) + 1
         F = np.zeros((C, Y))
         # I = np.full((C, Y + 1), np.nan)
-        print(k)
+        # print(k)
         for c in range(0, C):
             for y_k in range(0, Y):
                 V = -np.inf
@@ -244,25 +255,12 @@ def dymanic_programming(f: np.array, n: int, Y: int):
     
     return F
 
-    
-# %%
 
-
-if __name__ == '__main__':
-    # f = create_f()
-    
-    f = load_f('f.npy')
-    y = np.load('y.npy')
-    
+def optimize_c(f):
     n = f.shape[0]
     Y = f.shape[1]
     
     F = dymanic_programming(f, n, Y)
-    
-    n = f.shape[0]
-    Y = f.shape[1]
-    
-    # for c in range(1, Y * (n - 1) + 1):
     
     obj_best = -np.inf
     c_best = None
@@ -274,11 +272,117 @@ if __name__ == '__main__':
         if obj > obj_best:
             obj_best = obj
             c_best = c - 1
+            
+    print(c_best)
+    print(obj_best)
+            
+    return c_best, obj_best
+    
+    
+def calc_grads(features, y_true, y_pred):
+    w_grad = np.zeros_like(w)
+    b_grad = np.zeros_like(b)
+    
+    for i, f in enumerate(features):
+        z_pred = y_pred[i] + y_pred[i + 1]
+        z_true = y_true[i] + y_true[i + 1]
+        
+        w_grad[z_pred] += f
+        w_grad[z_true] -= f
+        
+        b_grad[z_pred] += 1
+        b_grad[z_true] -= 1
+    
+    return w_grad, b_grad
+
+
+def update_params(features, w, b, y_true, y_pred, lr=1e-5):
+    w_grad, b_grad = calc_grads(features, y_true, y_pred)
+    
+    w = w - lr * w_grad
+    b = b - lr * b_grad
+    
+    return w, b
+    
+    
+def recalculate_f(features, w, b):
+    n = len(features)
+    Y = int(len(w) / 2)
+    
+    f = np.zeros((n, Y, Y))
+    for i in range(n):
+        scores = w @ features[i] + b
+
+        for j in range(Y):
+            for k in range(Y):
+                f[i, j, k] = scores[j + k]
+    return f
+    
+    
+# %%
+
+
+if __name__ == '__main__':
+    # f = create_f()
+    
+    f = load_f('f.npy')
+    y_true = np.load('y.npy')
+    w = np.load('w.npy')[:20]
+    b = np.load('b.npy')[:20]
+    features = np.load('features.npy')
+    
+
+    # print(len(f), len(y))
+    # exit()
+    
+    n = f.shape[0]
+    Y = f.shape[1]
+            
+    # c_best, obj_best = optimize_c(f)
+    
+    
+    rvces = []
+    losses = []
+    
+    for i in range(50):
+        
+        G, s, t = create_graph(f)
+    
+        loss, y_pred = evaluate_loss(f, G, s, t, y_true)
+        
+    
+        w, b = update_params(features, w, b, y_true, y_pred)
+    
+        f = recalculate_f(features, w, b)
+        
+        rvce = abs(y_pred.sum() - y_true.sum()) / y_true.sum()
+        
+        # rvce = np.random.rand(1)[0]
+        # loss = np.random.rand(1)[0]
+        
+        print(f'loss: {loss:.2f} | rvce: {rvce:.2f}')
+        
+        rvces.append(rvce)
+        losses.append(loss)
+        
+        
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].set_title('margin rescaling loss')
+    axes[0].set_xlabel('iteration')
+    axes[0].set_ylabel('margin rescaling loss')
+    axes[0].plot(losses)
+    
+    axes[1].set_title('rvce')
+    axes[1].set_xlabel('iteration')
+    axes[1].set_ylabel('rvce')
+    
+    axes[1].plot(rvces)
+    plt.savefig('plot.png')
         
         
     
-    G, s, t = create_graph(f)
-    
+    # print( np.sum((f_prime - f) > 5e-5 ))
+    exit()
     objective, maximizers = evaluate(f, G, s, t, c_best)
     
     print()
@@ -287,7 +391,9 @@ if __name__ == '__main__':
     print(objective)
     print(maximizers)
     
-    rvce = (maximizers.sum() - y.sum()) / y.sum()
+    print(len(maximizers))
+    
+    rvce = (maximizers.sum() - y_true.sum()) / y_true.sum()
     
     print(rvce)
 
@@ -300,9 +406,9 @@ if __name__ == '__main__':
 
     # sequence = most_probable_sequence(f)
 
-    # const = find_constant(f, y)    
+    const = find_true_score(f, y_true)
     
-    # evaluate_loss(f, G, s, t, y, const)
+    
 # %%
 
 
