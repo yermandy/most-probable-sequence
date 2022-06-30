@@ -3,6 +3,7 @@ import numpy as np
 from tqdm import tqdm
 import networkx as nx
 import gurobipy as g
+import numba
 
 
 def create_f():
@@ -110,14 +111,21 @@ def evaluate(f, G, s, t, C = 0):
     m.optimize()
     
     maximizers = {}
+    
 
     for i in range(n):
         for j in range(Y):
             for k in range(Y):
                 if x[i * Y + j, (i + 1) * Y + k].x > 0.5:
                     maximizers[i] = (j, k)
-                
-    return m.objVal, maximizers
+    
+    maximizers_array = []
+    for i in range(n):
+        maximizers_array.append(maximizers[i][0])
+    maximizers_array.append(maximizers[i][1])
+    maximizers_array = np.array(maximizers_array)
+    
+    return m.objVal, maximizers_array
 
 
 def most_probable_sequence(f):
@@ -205,33 +213,25 @@ def evaluate_loss(f, G, s, t, y, const):
     return margin_rescaling_loss
 
 
-def dymanic_programming(f):
-    n = f.shape[0]
-    Y = f.shape[1]
-    
+@numba.jit
+def dymanic_programming(f: np.array, n: int, Y: int):
     Fs = {}
-    Is = {}
+    # Is = {}
+    
     for k in range(2, n + 2):
         C = Y * (k - 1) + 1
         F = np.zeros((C, Y))
         # I = np.full((C, Y + 1), np.nan)
-
-        # print(f'\n{k = }')
-        # print(k)
+        print(k)
         for c in range(0, C):
-
-            # print(f'{c = }')
             for y_k in range(0, Y):
                 V = -np.inf
                 for y_k_1 in range(0, min(Y, c)):
-                # for y_k_1 in range(0, Y):
-
                     if k == 2:
                         F[c, y_k] = f[k - 2, y_k_1, y_k]
                         # I[c, y_k] = y_k_1
                     else:
-                        # print('----')
-                        if c - y_k_1 >= Fs[k - 1].shape[0]:
+                        if c - y_k_1 >= Y * (k - 2) + 1:
                             continue
                         
                         V_new = Fs[k - 1][c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
@@ -239,23 +239,25 @@ def dymanic_programming(f):
                             V = V_new
                             F[c, y_k] = V
                             # I[c, y_k] = y_k_1
-        # print(F)
         Fs[k] = F
         # Is[k] = I
     
-    return Fs[k]
+    return F
 
     
 # %%
 
 
 if __name__ == '__main__':
-    f = create_f()
+    # f = create_f()
     
-    # f = load_f('f.npy')
-    # y = np.load('y.npy')
+    f = load_f('f.npy')
+    y = np.load('y.npy')
     
-    F = dymanic_programming(f)
+    n = f.shape[0]
+    Y = f.shape[1]
+    
+    F = dymanic_programming(f, n, Y)
     
     n = f.shape[0]
     Y = f.shape[1]
@@ -268,7 +270,7 @@ if __name__ == '__main__':
     for c in range(1, (Y - 1) * (n - 1) + 2):
         values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
         obj = max(values)
-        print(c - 1, obj)
+        # print(c - 1, obj)
         if obj > obj_best:
             obj_best = obj
             c_best = c - 1
@@ -284,6 +286,10 @@ if __name__ == '__main__':
     print(obj_best)
     print(objective)
     print(maximizers)
+    
+    rvce = (maximizers.sum() - y.sum()) / y.sum()
+    
+    print(rvce)
 
     # for c in range((Y - 1) * (n - 1) + 2):
     # for c in range(100):
@@ -298,3 +304,8 @@ if __name__ == '__main__':
     
     # evaluate_loss(f, G, s, t, y, const)
 # %%
+
+
+# c_best: 85
+# obj_best: 3592.455746650696
+# objective: 3592.455746650696

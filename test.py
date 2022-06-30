@@ -56,7 +56,10 @@ for c in range(0, Y * (n - 1) + 1):
 
 print('\nDP')
 
-F = dymanic_programming(f)
+n = f.shape[0]
+Y = f.shape[1]
+
+F = dymanic_programming(f, n, Y)
 
 for c in range(1, Y * (n - 1) + 1):
     values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
