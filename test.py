@@ -4,24 +4,23 @@ from ilp import *
 def generate_random():
     np.random.seed(42)
     
-    # f = np.random.rand(6, 3, 3)
+    # f = np.random.rand(20, 5, 5)
     
     f = np.random.rand(4, 3, 3)
-    f = np.random.rand(20, 5, 5)
-    # f[0, 1, 0] = 2
-    # f[1, 0, 2] = 2
-    # f[2, 2, 2] = 2
-    # f[3, 2, 1] = 2
+    f[0, 1, 0] = 2
+    f[1, 0, 2] = 2
+    f[2, 2, 2] = 2
+    f[3, 2, 1] = 2
     
-    # f[0, 0, 2] = 3
-    # f[1, 2, 1] = 1
-    # f[2, 1, 0] = 3
-    # f[3, 0, 2] = 2
+    f[0, 0, 2] = 3
+    f[1, 2, 1] = 1
+    f[2, 1, 0] = 3
+    f[3, 0, 2] = 2
     
-    # f[0, 2, 1] = 3
-    # f[1, 1, 0] = 3
-    # f[2, 0, 1] = 3
-    # f[3, 1, 0] = 3
+    f[0, 2, 1] = 3
+    f[1, 1, 0] = 3
+    f[2, 0, 1] = 3
+    f[3, 1, 0] = 3
 
     y = [1, 0, 2, 2, 1]
     
@@ -67,7 +66,7 @@ F, Is = dymanic_programming(f, n, Y)
 
 def backtrack(Is, idx, c):
     maximizers = [idx]
-    for k in reversed(Is.keys()):
+    for k in reversed(list(Is.keys())):
         c -= idx
         idx = Is[k][c, idx]
         maximizers.insert(0, idx)

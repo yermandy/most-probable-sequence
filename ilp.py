@@ -235,7 +235,7 @@ def dymanic_programming(f: np.array, n: int, Y: int):
         C = Y * (k - 1) + 1
         # C = (Y - 1) * k + 1
         F = np.zeros((C, Y))
-        I = np.full((C, Y), np.nan, dtype=int)
+        I = np.full((C, Y), -1, dtype=np.int64)
         # print(k)
         for c in range(0, C):
             
