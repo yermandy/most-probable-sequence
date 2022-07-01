@@ -225,7 +225,7 @@ def evaluate_loss(f, G, s, t, y_true):
 
 
 # TODO there is still a bug somewhere (in the last iteration)
-# @numba.jit(nopython=True)
+@numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
     
     Fs = {}
