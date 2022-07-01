@@ -130,15 +130,25 @@ def evaluate(f, G, s, t, C = 0):
 
 
 def most_probable_sequence(f):
+    """ Find the most probable sequence using dynamic programming
+        Compute \max_{y_1,...,y_{n+1}} \sum_{i=1}^{n} f_i(y_i, y_{i+1})
+
+    Parameters
+    ----------
+    f : np.ndarray
+        Matrix of size (n, Y, Y).
+
+    Returns
+    -------
+    sequence : np.ndarray
+        Sequence of size (n + 1)
+    """
     f = np.copy(f)
     
-    # find the most probable sequence using dynamic programming
     n = f.shape[0]
     Y = f.shape[1]
 
     I = np.zeros((Y, n), dtype=int)
-    I[:, 0] = np.arange(Y)
-
     F = np.zeros((Y, n))
 
     for i in range(n):
@@ -146,7 +156,6 @@ def most_probable_sequence(f):
             distances = f[i, :, k]
             if i > 0:
                 distances += F[:, i - 1]
-            # print(distances)
             maximizer = distances.argmax()
 
             I[k, i] = maximizer
@@ -154,18 +163,14 @@ def most_probable_sequence(f):
 
     idx = F[:, -1].argmax(0)
     length = F[idx, -1]
-    print(length)
 
-    sequence = []
+    sequence = [idx]
     for i in reversed(range(n)):
-        sequence.append(idx)
         idx = I[idx, i]
-    sequence.append(idx)
-    sequence = sequence[::-1]
-
+        sequence.insert(0, idx)
     sequence = np.array(sequence)
     
-    return sequence
+    return length, sequence
 
 
 
@@ -188,8 +193,19 @@ def find_true_score(f, y):
         
     return constant
     
+# TODO fix last iterations issue
+def backtrack(Is, F, c, Y):
+    values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
+    idx = np.argmax(values)
+    maximizers = [idx]
+    for k in reversed(list(Is.keys())):
+        c -= idx
+        idx = Is[k][c, idx]
+        maximizers.insert(0, idx)
+    return np.array(maximizers)
 
-def evaluate_loss(f, G, s, t, y_true):
+
+def evaluate_loss(f, y_true):
     n = f.shape[0]
     Y = f.shape[1]
     
@@ -198,17 +214,18 @@ def evaluate_loss(f, G, s, t, y_true):
     c_best = None
     score_best = None
     
-    F = dymanic_programming(f, n, Y)
+    F, Is = dymanic_programming(f, n, Y)
     
     c_hat = y_true.sum()
-    for c in range(1, (Y - 1) * (n - 1) + 2):
+    C_max = (Y - 1) * (n + 1)
+    for c in range(1, C_max + 1):
         score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
         rvce_loss = abs(c - c_hat) / c_hat
         objective = rvce_loss + score
         # print(c, objective)
         if objective > objective_best:
             objective_best = objective
-            c_best = c - 1
+            c_best = c
             score_best = score
 
     true_score = find_true_score(f, y_true)
@@ -217,9 +234,13 @@ def evaluate_loss(f, G, s, t, y_true):
     
     print(margin_rescaling_loss, score_best, c_best)
     
-    objective, y_pred = evaluate(f, G, s, t, c_best)
-    
+    # Notice, c_best should be c_best = c - 1
+    # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
+    
+    y_pred = backtrack(Is, F, c_best, Y)
+    
+    
     
     return margin_rescaling_loss, y_pred
 
@@ -265,7 +286,7 @@ def optimize_c(f):
     n = f.shape[0]
     Y = f.shape[1]
     
-    F = dymanic_programming(f, n, Y)
+    F, Is = dymanic_programming(f, n, Y)
     
     obj_best = -np.inf
     c_best = None
@@ -349,11 +370,11 @@ if __name__ == '__main__':
     rvces = []
     losses = []
     
-    for i in range(5):
+    for i in range(20):
         
-        G, s, t = create_graph(f)
+        # G, s, t = create_graph(f)
     
-        loss, y_pred = evaluate_loss(f, G, s, t, y_true)
+        loss, y_pred = evaluate_loss(f, y_true)
         
         w, b = update_params(features, w, b, y_true, y_pred)
     
