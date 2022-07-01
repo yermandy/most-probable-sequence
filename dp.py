@@ -1,7 +1,6 @@
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
-from utils import generate_random
 
 
 def find_true_score(f, y):
@@ -161,6 +160,8 @@ def recalculate_f(features, w, b):
 
 
 if __name__ == '__main__':
+    from utils import generate_random
+    
     f, y = generate_random()
     
     n = f.shape[0]

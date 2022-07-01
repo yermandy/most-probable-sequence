@@ -2,7 +2,6 @@ import numpy as np
 import networkx as nx
 import gurobipy as g
 import matplotlib.pyplot as plt
-from utils import generate_random
 
 
 def create_graph(f):
@@ -105,6 +104,8 @@ def draw(G):
 
 
 if __name__ == '__main__':
+    from utils import generate_random
+    
     f, y = generate_random()
     
     G, s, t = create_graph(f)
