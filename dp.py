@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
+from utils import generate_random
 
 
 def find_true_score(f, y):
@@ -11,12 +12,13 @@ def find_true_score(f, y):
 def backtrack(Is, F, c, Y):
     values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
     idx = np.argmax(values)
+    objective = values[idx]
     maximizers = [idx]
     for k in reversed(list(Is.keys())):
         c -= idx
         idx = Is[k][c, idx]
         maximizers.insert(0, idx)
-    return np.array(maximizers)
+    return objective, np.array(maximizers)
 
 
 def evaluate_loss(f, y_true):
@@ -52,7 +54,7 @@ def evaluate_loss(f, y_true):
     # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
     
-    y_pred = backtrack(Is, F, c_best, Y)
+    objective, y_pred = backtrack(Is, F, c_best, Y)
     
     return margin_rescaling_loss, y_pred
 
@@ -159,56 +161,14 @@ def recalculate_f(features, w, b):
 
 
 if __name__ == '__main__':
-    # f = create_f()
-    
-    f = np.load('f.npy')
-    y_true = np.load('y.npy')
-    w = np.load('w.npy')[:20]
-    b = np.load('b.npy')[:20]
-    features = np.load('features.npy')
-
-    # print(len(f), len(y))
-    # exit()
+    f, y = generate_random()
     
     n = f.shape[0]
     Y = f.shape[1]
-            
-    # c_best, obj_best = optimize_c(f)
-    
-    
-    rvces = []
-    losses = []
-    
-    for i in range(20):
+    C_max = (Y - 1) * (n + 1)
+
+    F, Is = dymanic_programming(f, n, Y)
         
-        # G, s, t = create_graph(f)
-    
-        loss, y_pred = evaluate_loss(f, y_true)
-        
-        w, b = update_params(features, w, b, y_true, y_pred)
-    
-        f = recalculate_f(features, w, b)
-        
-        rvce = abs(y_pred.sum() - y_true.sum()) / y_true.sum()
-        
-        # rvce = np.random.rand(1)[0]
-        # loss = np.random.rand(1)[0]
-        
-        print(f'i: {i} | loss: {loss:.2f} | rvce: {rvce:.2f}')
-        
-        rvces.append(rvce)
-        losses.append(loss)
-        
-        
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].set_title('margin rescaling loss')
-    axes[0].set_xlabel('iteration')
-    axes[0].set_ylabel('margin rescaling loss')
-    axes[0].plot(losses)
-    
-    axes[1].set_title('rvce')
-    axes[1].set_xlabel('iteration')
-    axes[1].set_ylabel('rvce')
-    
-    axes[1].plot(rvces)
-    # plt.savefig('plot.png')
+    for c in range(1, C_max + 1):
+        objective, maximizers = backtrack(Is, F, c, Y)
+        print(c - 1, objective, maximizers)

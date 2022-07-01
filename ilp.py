@@ -109,7 +109,6 @@ if __name__ == '__main__':
     
     G, s, t = create_graph(f)
     
-    
     n = f.shape[0]
     Y = f.shape[1]
     C_max = (Y - 1) * (n + 1)
