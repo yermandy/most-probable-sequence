@@ -77,13 +77,14 @@ def evaluate(f, G, s, t, C = 0):
     m.optimize()
     
     maximizers = {}
-    
-
     for i in range(n):
         for j in range(Y):
             for k in range(Y):
                 if x[i * Y + j, (i + 1) * Y + k].x > 0.5:
                     maximizers[i] = (j, k)
+    
+    # import itertools
+    # maximizers = {i: (j, k) for i, j, k in itertools.product(range(n), range(Y), range(Y)) if x[i * Y + j, (i + 1) * Y + k].x > 0.5}
     
     maximizers_array = []
     for i in range(n):
