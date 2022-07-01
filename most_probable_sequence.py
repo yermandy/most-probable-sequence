@@ -52,4 +52,5 @@ if __name__ == '__main__':
     length, sequence = most_probable_sequence(f)
     
     print(sequence)
+    print(length)
     print(y)
