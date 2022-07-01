@@ -7,36 +7,8 @@ import numba
 import matplotlib.pyplot as plt
 
 
-def create_f():
-    np.random.seed(42)
-
-    # number of events in 3 second window
-    Y = 10
-    # dimension of feature vector
-    d = 13
-    # number of 3 second windows
-    n = 50
-
-    # <w(y_1 + y_2), ϕ(x_{12})>
-    # weights w
-    w = np.random.rand(2 * Y, d)
-    # biases b
-    b = np.random.rand(d)
-    # features ϕ
-    phi = np.random.rand(d, n)
-
-    # f_i(y_i = j, y_{i+1} = k)
-    f = np.zeros((n, Y, Y))
-    for i in range(n):
-        outputs = w @ phi[:, i]
-        for j in range(Y):
-            for k in range(Y):
-                f[i, j, k] = outputs[j + k]
-    return f
 
 
-def load_f(path):
-    return np.load(path)
     
 
 def create_graph(f):
@@ -129,69 +101,9 @@ def evaluate(f, G, s, t, C = 0):
     return m.objVal, maximizers_array
 
 
-def most_probable_sequence(f):
-    """ Find the most probable sequence using dynamic programming
-        Compute \max_{y_1,...,y_{n+1}} \sum_{i=1}^{n} f_i(y_i, y_{i+1})
-
-    Parameters
-    ----------
-    f : np.ndarray
-        Matrix of size (n, Y, Y).
-
-    Returns
-    -------
-    sequence : np.ndarray
-        Sequence of size (n + 1)
-    """
-    f = np.copy(f)
-    
-    n = f.shape[0]
-    Y = f.shape[1]
-
-    I = np.zeros((Y, n), dtype=int)
-    F = np.zeros((Y, n))
-
-    for i in range(n):
-        for k in range(Y):
-            distances = f[i, :, k]
-            if i > 0:
-                distances += F[:, i - 1]
-            maximizer = distances.argmax()
-
-            I[k, i] = maximizer
-            F[k, i] = distances[maximizer]
-
-    idx = F[:, -1].argmax(0)
-    length = F[idx, -1]
-
-    sequence = [idx]
-    for i in reversed(range(n)):
-        idx = I[idx, i]
-        sequence.insert(0, idx)
-    sequence = np.array(sequence)
-    
-    return length, sequence
-
-
-
-# import matplotlib.pyplot as plt
-
-# pos = nx.spring_layout(G, seed=0)  # Seed for reproducible layout
-# nx.draw(G, pos, with_labels=True)
-
-
-
-
-
 def find_true_score(f, y):
     return np.sum([f[i, y[i], y[i + 1]] for i in range(len(f))])
 
-    constant = 0
-    for i in range(len(f)):
-        y_i, y_i_1 = y[i], y[i + 1]
-        constant += f[i, y_i, y_i_1]
-        
-    return constant
     
 # TODO fix last iterations issue
 def backtrack(Is, F, c, Y):
@@ -239,8 +151,6 @@ def evaluate_loss(f, y_true):
     # print('ilp objective', objective)
     
     y_pred = backtrack(Is, F, c_best, Y)
-    
-    
     
     return margin_rescaling_loss, y_pred
 
@@ -352,7 +262,7 @@ def recalculate_f(features, w, b):
 if __name__ == '__main__':
     # f = create_f()
     
-    f = load_f('f.npy')
+    f = np.load('f.npy')
     y_true = np.load('y.npy')
     w = np.load('w.npy')[:20]
     b = np.load('b.npy')[:20]
