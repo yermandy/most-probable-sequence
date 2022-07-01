@@ -189,7 +189,7 @@ def find_true_score(f, y):
     return constant
     
 
-def evaluate_loss(f, G, s, t, y):
+def evaluate_loss(f, G, s, t, y_true):
     n = f.shape[0]
     Y = f.shape[1]
     
@@ -200,7 +200,7 @@ def evaluate_loss(f, G, s, t, y):
     
     F = dymanic_programming(f, n, Y)
     
-    c_hat = y.sum()
+    c_hat = y_true.sum()
     for c in range(1, (Y - 1) * (n - 1) + 2):
         score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
         rvce_loss = abs(c - c_hat) / c_hat
@@ -211,49 +211,54 @@ def evaluate_loss(f, G, s, t, y):
             c_best = c - 1
             score_best = score
 
-    true_score = find_true_score(f, y)
+    true_score = find_true_score(f, y_true)
     
     margin_rescaling_loss = objective_best - true_score
     
     print(margin_rescaling_loss, score_best, c_best)
     
-    objective, maximizers = evaluate(f, G, s, t, c_best)
+    objective, y_pred = evaluate(f, G, s, t, c_best)
     
     # print('ilp objective', objective)
     
-    return margin_rescaling_loss, maximizers
+    return margin_rescaling_loss, y_pred
 
 
-@numba.jit(nopython=True)
+# TODO there is still a bug somewhere (in the last iteration)
+# @numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
+    
     Fs = {}
-    # Is = {}
+    Is = {}
     
     for k in range(2, n + 2):
         C = Y * (k - 1) + 1
+        # C = (Y - 1) * k + 1
         F = np.zeros((C, Y))
-        # I = np.full((C, Y + 1), np.nan)
+        I = np.full((C, Y), np.nan, dtype=int)
         # print(k)
         for c in range(0, C):
+            
             for y_k in range(0, Y):
                 V = -np.inf
                 for y_k_1 in range(0, min(Y, c)):
                     if k == 2:
                         F[c, y_k] = f[k - 2, y_k_1, y_k]
-                        # I[c, y_k] = y_k_1
+                        I[c, y_k] = y_k_1
                     else:
                         if c - y_k_1 >= Y * (k - 2) + 1:
+                        # if c - y_k_1 >= (Y - 1) * (k - 1):
                             continue
                         
                         V_new = Fs[k - 1][c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
                         if V_new > V:
                             V = V_new
                             F[c, y_k] = V
-                            # I[c, y_k] = y_k_1
+                            I[c, y_k] = y_k_1
         Fs[k] = F
-        # Is[k] = I
+        Is[k] = I
     
-    return F
+    return F, Is
 
 
 def optimize_c(f):
@@ -278,8 +283,9 @@ def optimize_c(f):
             
     return c_best, obj_best
     
-    
-def calc_grads(features, y_true, y_pred):
+
+@numba.jit(nopython=True)
+def calc_grads(features, w, b, y_true, y_pred):
     w_grad = np.zeros_like(w)
     b_grad = np.zeros_like(b)
     
@@ -296,8 +302,8 @@ def calc_grads(features, y_true, y_pred):
     return w_grad, b_grad
 
 
-def update_params(features, w, b, y_true, y_pred, lr=1e-5):
-    w_grad, b_grad = calc_grads(features, y_true, y_pred)
+def update_params(features, w, b, y_true, y_pred, lr=5e-5):
+    w_grad, b_grad = calc_grads(features, w, b, y_true, y_pred)
     
     w = w - lr * w_grad
     b = b - lr * b_grad
@@ -330,7 +336,6 @@ if __name__ == '__main__':
     w = np.load('w.npy')[:20]
     b = np.load('b.npy')[:20]
     features = np.load('features.npy')
-    
 
     # print(len(f), len(y))
     # exit()
@@ -344,13 +349,12 @@ if __name__ == '__main__':
     rvces = []
     losses = []
     
-    for i in range(50):
+    for i in range(5):
         
         G, s, t = create_graph(f)
     
         loss, y_pred = evaluate_loss(f, G, s, t, y_true)
         
-    
         w, b = update_params(features, w, b, y_true, y_pred)
     
         f = recalculate_f(features, w, b)
@@ -360,7 +364,7 @@ if __name__ == '__main__':
         # rvce = np.random.rand(1)[0]
         # loss = np.random.rand(1)[0]
         
-        print(f'loss: {loss:.2f} | rvce: {rvce:.2f}')
+        print(f'i: {i} | loss: {loss:.2f} | rvce: {rvce:.2f}')
         
         rvces.append(rvce)
         losses.append(loss)
@@ -377,7 +381,7 @@ if __name__ == '__main__':
     axes[1].set_ylabel('rvce')
     
     axes[1].plot(rvces)
-    plt.savefig('plot.png')
+    # plt.savefig('plot.png')
         
         
     
