@@ -136,14 +136,17 @@ def calc_grads(features, w, b, y_true, y_pred):
     return w_grad, b_grad
 
 
-def update_params(features, w, b, y_true, y_pred, lr=5e-5):
+def update_params_sgd(features, w, b, y_true, y_pred, lr=5e-5, weight_decay=0.0):
     w_grad, b_grad = calc_grads(features, w, b, y_true, y_pred)
     
+    if weight_decay > 0:
+        w_grad += weight_decay * w
+        
     w = w - lr * w_grad
     b = b - lr * b_grad
     
     return w, b
-    
+
     
 def recalculate_f(features, w, b):
     n = len(features)
@@ -170,6 +173,7 @@ if __name__ == '__main__':
 
     F, Is = dymanic_programming(f, n, Y)
         
+    print('DP')
     for c in range(1, C_max + 1):
         objective, maximizers = backtrack(Is, F, c, Y)
         print(c - 1, objective, maximizers)
