@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
+from ilp import *
 
 
 def find_true_score(f, y):
@@ -34,26 +35,28 @@ def evaluate_loss(f, y_true):
     c_hat = y_true.sum()
     C_max = (Y - 1) * (n + 1)
     for c in range(1, C_max + 1):
-        score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
+        score = np.max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
         rvce_loss = abs(c - c_hat) / c_hat
         objective = rvce_loss + score
         # print(c, objective)
         if objective > objective_best:
             objective_best = objective
-            c_best = c
+            c_best = c - 1
             score_best = score
 
     true_score = find_true_score(f, y_true)
     
     margin_rescaling_loss = objective_best - true_score
     
-    print(margin_rescaling_loss, score_best, c_best)
+    # print(margin_rescaling_loss, score_best, c_best)
     
     # Notice, c_best should be c_best = c - 1
+    # G, s, t = create_graph(f)
     # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
     
-    objective, y_pred = backtrack(Is, F, c_best, Y)
+    objective, y_pred = backtrack(Is, F, c_best + 1, Y)
+    # print('dp objective', objective)
     
     return margin_rescaling_loss, y_pred
 
@@ -136,7 +139,7 @@ def calc_grads(features, w, b, y_true, y_pred):
     return w_grad, b_grad
 
 
-def update_params_sgd(features, w, b, y_true, y_pred, lr=5e-5, weight_decay=0.0):
+def update_params_sgd(features, w, b, y_true, y_pred, lr=1e-5, weight_decay=0.0):
     w_grad, b_grad = calc_grads(features, w, b, y_true, y_pred)
     
     if weight_decay > 0:

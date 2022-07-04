@@ -2,7 +2,7 @@ from dp import *
 
 
 class Adam():
-    def __init__(self, lr=0.0001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+    def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
         # Initialize 1st moment vector
         self.m_dw, self.m_db = 0, 0
         # Initialize 2nd moment vector
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     optim = Adam()
     
     
-    for i in range(200):
+    for i in range(500):
         
         # G, s, t = create_graph(f)
     
@@ -66,16 +66,16 @@ if __name__ == '__main__':
         
         # loss += weight_decay / 2 * np.sum(w ** 2)
         
-        # w, b = update_params_sgd(features, w, b, y_true, y_pred, weight_decay=weight_decay)
+        w, b = update_params_sgd(features, w, b, y_true, y_pred, weight_decay=weight_decay)
         
-        dw, db = calc_grads(features, w, b, y_true, y_pred)
-        w, b = optim.step(i + 1, w, b, dw, db)
+        # dw, db = calc_grads(features, w, b, y_true, y_pred)
+        # w, b = optim.step(i + 1, w, b, dw, db)
     
         f = recalculate_f(features, w, b)
         
         rvce = abs(y_pred.sum() - y_true.sum()) / y_true.sum()
         
-        print(f'i: {i} | loss: {loss:.2f} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
+        print(f'i: {i} | loss: {loss:.2f} | c: {y_pred.sum()} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
         
         rvces.append(rvce)
         losses.append(loss)
@@ -92,4 +92,4 @@ if __name__ == '__main__':
     axes[1].set_ylabel('rvce')
     
     axes[1].plot(rvces)
-    plt.savefig('outputs/plot_adam.png')
+    plt.savefig('outputs/plot_sgd.png')
