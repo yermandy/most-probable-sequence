@@ -16,8 +16,9 @@ class AdamW():
 
 
     def step(self, t, w, b, dw, db):
-        dw = dw + self.weight_decay * w
-        db = db + self.weight_decay * b
+        if self.weight_decay > 0:
+            dw = dw + self.weight_decay * w
+            db = db + self.weight_decay * b
         
         # Update biased first moment estimate
         self.m_dw = self.beta1 * self.m_dw + (1 - self.beta1) * dw
@@ -36,8 +37,13 @@ class AdamW():
         v_db_corr = self.v_db / (1 - self.beta2 ** t)
 
         # Update parameters
-        w = w - self.lr * m_dw_corr / (np.sqrt(v_dw_corr) + self.epsilon) - self.weight_decay * w
-        b = b - self.lr * m_db_corr / (np.sqrt(v_db_corr) + self.epsilon) - self.weight_decay * b
+        w = w - self.lr * m_dw_corr / (np.sqrt(v_dw_corr) + self.epsilon)
+        b = b - self.lr * m_db_corr / (np.sqrt(v_db_corr) + self.epsilon)
+        
+        if self.weight_decay > 0:
+            w = w - self.weight_decay * w
+            b = b - self.weight_decay * b
+            
         return w, b
 
 
