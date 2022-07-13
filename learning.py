@@ -49,20 +49,24 @@ class AdamW():
 
 
 if __name__ == '__main__':
-    Y = 5
+    Y = 6
     
     root = 'files'
     
-    y_true = [np.load(f'{root}/y.npy')]
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
-    features = [np.load(f'{root}/features.npy')]
     
-    with open(f'{root}/y_val.pickle', 'rb') as f:
+    with open(f'{root}/y_trn_val.pickle', 'rb') as f:
         y_true = pickle.load(f)
     
-    with open(f'{root}/features_val.pickle', 'rb') as f:
+    with open(f'{root}/features_trn_val.pickle', 'rb') as f:
         features = pickle.load(f)
+    
+    with open(f'{root}/y_tst.pickle', 'rb') as f:
+        y_true_tst = pickle.load(f)
+    
+    with open(f'{root}/features_tst.pickle', 'rb') as f:
+        features_tst = pickle.load(f)
     
     # print(f.shape)
     # print(y_true.shape)
@@ -73,8 +77,13 @@ if __name__ == '__main__':
     rvces_epochs = []
     losses_epochs = []
     
+    rvces_epochs_tst = []
+    losses_epochs_tst = []
+    
     
     optim = AdamW(weight_decay=0.0001)
+    
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     
     for i in range(500):
         
@@ -85,6 +94,9 @@ if __name__ == '__main__':
         
         rvces = []
         losses = []
+        
+        losses_tst = []
+        rvces_tst = []
         
         for features_i, y_true_i in zip(features, y_true):
         
@@ -100,12 +112,21 @@ if __name__ == '__main__':
             
             dw += dw_i
             db += db_i
-            
+                        
         dw /= len(features)
         db /= len(features)
             
         w, b = optim.step(i + 1, w, b, dw, db)
         
+        for features_i, y_true_i in zip(features_tst, y_true_tst):
+            f = calc_f(features_i, w, b)
+        
+            loss, y_pred = evaluate_loss(f, y_true_i)
+            losses_tst.append(loss)
+            
+            rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+            rvces_tst.append(rvce)
+
         rvce = np.mean(rvces)
         loss = np.mean(losses)
         
@@ -114,16 +135,38 @@ if __name__ == '__main__':
         rvces_epochs.append(rvce)
         losses_epochs.append(loss)
         
+        rvces_epochs_tst.append(np.mean(rvces_tst))
+        losses_epochs_tst.append(np.mean(losses_tst))
         
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].set_title('margin rescaling loss')
-    axes[0].set_xlabel('iteration')
-    axes[0].set_ylabel('margin rescaling loss')
-    axes[0].plot(losses_epochs)
+        axes[0].cla()
+        axes[0].set_title('margin rescaling loss')
+        axes[0].set_xlabel('iteration')
+        axes[0].set_ylabel('margin rescaling loss')
+        axes[0].plot(losses_epochs, label='trn, val')
+        axes[0].plot(losses_epochs_tst, label='tst')
+        
+        axes[1].cla()
+        axes[1].set_title('rvce')
+        axes[1].set_xlabel('iteration')
+        axes[1].set_ylabel('rvce')
+        axes[1].plot(rvces_epochs, label='trn, val')
+        axes[1].plot(rvces_epochs_tst, label='tst')
+        
+        for ax in axes: ax.legend()
     
-    axes[1].set_title('rvce')
-    axes[1].set_xlabel('iteration')
-    axes[1].set_ylabel('rvce')
+        plt.tight_layout()
+        plt.pause(.0001)
+        
+        
+    # fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+    # axes[0].set_title('margin rescaling loss')
+    # axes[0].set_xlabel('iteration')
+    # axes[0].set_ylabel('margin rescaling loss')
+    # axes[0].plot(losses_epochs)
     
-    axes[1].plot(rvces_epochs)
-    plt.savefig('outputs/plot_adamw_0.0001.png')
+    # axes[1].set_title('rvce')
+    # axes[1].set_xlabel('iteration')
+    # axes[1].set_ylabel('rvce')
+    # axes[1].plot(rvces_epochs)
+    
+    plt.savefig('outputs/plot_trn_val.png')
