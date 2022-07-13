@@ -5,7 +5,7 @@ from ilp import *
 
 
 def find_true_score(f, y):
-    return np.sum([f[i, y[i], y[i + 1]] for i in range(len(f))])
+    return np.sum(f[i, y[i], y[i + 1]] for i in range(len(f)))
 
     
 # TODO fix last iterations issue
@@ -150,10 +150,11 @@ def update_params_sgd(features, w, b, y_true, y_pred, lr=1e-5, weight_decay=0.0)
     
     return w, b
 
-    
-def recalculate_f(features, w, b):
+
+@numba.jit(nopython=True)
+def calc_f(features, w, b):
     n = len(features)
-    Y = int(len(w) / 2)
+    Y = len(w) // 2
     
     f = np.zeros((n, Y, Y))
     for i in range(n):

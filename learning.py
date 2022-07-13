@@ -50,14 +50,18 @@ class AdamW():
 if __name__ == '__main__':
     Y = 5
     
-    f = np.load('files/f.npy')[:, :Y, :Y]
-    y_true = np.load('files/y.npy')
-    w = np.load('files/w.npy')[:2 * Y]
-    b = np.load('files/b.npy')[:2 * Y]
-    features = np.load('files/features.npy')
+    root = '000_structured_rvce'
+    
+    y_true = [np.load(f'{root}/y.npy')]
+    w = np.load(f'{root}/w.npy')[:2 * Y]
+    b = np.load(f'{root}/b.npy')[:2 * Y]
+    features = [np.load(f'{root}/features.npy')]
+    
+    # print(f.shape)
+    # print(y_true.shape)
 
-    n = f.shape[0]
-    Y = f.shape[1]
+    # n = f.shape[0]
+    # Y = f.shape[1]
     
     rvces = []
     losses = []
@@ -67,19 +71,27 @@ if __name__ == '__main__':
     for i in range(500):
         
         # G, s, t = create_graph(f)
-    
-        loss, y_pred = evaluate_loss(f, y_true)
         
-        # loss += weight_decay / 2 * np.sum(w ** 2)
+        dw = 0
+        db = 0
         
-        # w, b = update_params_sgd(features, w, b, y_true, y_pred, weight_decay=0)
+        for features_i, y_true_i in zip(features, y_true):
         
-        dw, db = calc_grads(features, w, b, y_true, y_pred)
+            f = calc_f(features_i, w, b)
+        
+            loss, y_pred = evaluate_loss(f, y_true_i)
+            
+            rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+            
+            dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
+            
+            dw += dw_i
+            db += db_i
+            
+        dw /= len(features)
+        db /= len(features)
+            
         w, b = optim.step(i + 1, w, b, dw, db)
-    
-        f = recalculate_f(features, w, b)
-        
-        rvce = abs(y_pred.sum() - y_true.sum()) / y_true.sum()
         
         print(f'i: {i} | loss: {loss:.2f} | c: {y_pred.sum()} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
         
