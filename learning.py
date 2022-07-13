@@ -1,4 +1,5 @@
 from dp import *
+import pickle
 
 
 class AdamW():
@@ -50,12 +51,18 @@ class AdamW():
 if __name__ == '__main__':
     Y = 5
     
-    root = '000_structured_rvce'
+    root = 'files'
     
     y_true = [np.load(f'{root}/y.npy')]
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
     features = [np.load(f'{root}/features.npy')]
+    
+    with open(f'{root}/y_val.pickle', 'rb') as f:
+        y_true = pickle.load(f)
+    
+    with open(f'{root}/features_val.pickle', 'rb') as f:
+        features = pickle.load(f)
     
     # print(f.shape)
     # print(y_true.shape)
@@ -63,8 +70,9 @@ if __name__ == '__main__':
     # n = f.shape[0]
     # Y = f.shape[1]
     
-    rvces = []
-    losses = []
+    rvces_epochs = []
+    losses_epochs = []
+    
     
     optim = AdamW(weight_decay=0.0001)
     
@@ -75,13 +83,18 @@ if __name__ == '__main__':
         dw = 0
         db = 0
         
+        rvces = []
+        losses = []
+        
         for features_i, y_true_i in zip(features, y_true):
         
             f = calc_f(features_i, w, b)
         
             loss, y_pred = evaluate_loss(f, y_true_i)
+            losses.append(loss)
             
             rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+            rvces.append(rvce)
             
             dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
             
@@ -93,21 +106,24 @@ if __name__ == '__main__':
             
         w, b = optim.step(i + 1, w, b, dw, db)
         
-        print(f'i: {i} | loss: {loss:.2f} | c: {y_pred.sum()} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
+        rvce = np.mean(rvces)
+        loss = np.mean(losses)
         
-        rvces.append(rvce)
-        losses.append(loss)
+        print(f'i: {i} | loss: {loss:.2f} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
+        
+        rvces_epochs.append(rvce)
+        losses_epochs.append(loss)
         
         
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].set_title('margin rescaling loss')
     axes[0].set_xlabel('iteration')
     axes[0].set_ylabel('margin rescaling loss')
-    axes[0].plot(losses)
+    axes[0].plot(losses_epochs)
     
     axes[1].set_title('rvce')
     axes[1].set_xlabel('iteration')
     axes[1].set_ylabel('rvce')
     
-    axes[1].plot(rvces)
+    axes[1].plot(rvces_epochs)
     plt.savefig('outputs/plot_adamw_0.0001.png')

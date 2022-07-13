@@ -21,21 +21,15 @@ def backtrack(Is, F, c, Y):
     return objective, np.array(maximizers)
 
 
-def evaluate_loss(f, y_true):
-    n = f.shape[0]
-    Y = f.shape[1]
-    
+@numba.jit(nopython=True)
+def optimal_c(F, c_hat, Y, n):
     objective_best = -np.inf
-    margin_rescaling_loss = None
     c_best = None
     score_best = None
     
-    F, Is = dymanic_programming(f, n, Y)
-    
-    c_hat = y_true.sum()
     C_max = (Y - 1) * (n + 1)
     for c in range(1, C_max + 1):
-        score = np.max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
+        score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
         rvce_loss = abs(c - c_hat) / c_hat
         objective = rvce_loss + score
         # print(c, objective)
@@ -43,12 +37,21 @@ def evaluate_loss(f, y_true):
             objective_best = objective
             c_best = c - 1
             score_best = score
+    
+    return c_best, objective_best
+    
 
+def evaluate_loss(f, y_true):
+    n = f.shape[0]
+    Y = f.shape[1]
+    
+    F, Is = dymanic_programming(f, n, Y)
+    
+    c_best, objective_best = optimal_c(F, y_true.sum(), Y, n)
+    
     true_score = find_true_score(f, y_true)
     
     margin_rescaling_loss = objective_best - true_score
-    
-    # print(margin_rescaling_loss, score_best, c_best)
     
     # Notice, c_best should be c_best = c - 1
     # G, s, t = create_graph(f)
