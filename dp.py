@@ -73,12 +73,9 @@ def dymanic_programming(f: np.array, n: int, Y: int):
     
     for k in range(2, n + 2):
         C = Y * (k - 1) + 1
-        # C = (Y - 1) * k + 1
         F = np.zeros((C, Y))
         I = np.full((C, Y), -1, dtype=np.int64)
-        # print(k)
         for c in range(0, C):
-            
             for y_k in range(0, Y):
                 V = -np.inf
                 for y_k_1 in range(0, min(Y, c)):
@@ -87,7 +84,6 @@ def dymanic_programming(f: np.array, n: int, Y: int):
                         I[c, y_k] = y_k_1
                     else:
                         if c - y_k_1 >= Y * (k - 2) + 1:
-                        # if c - y_k_1 >= (Y - 1) * (k - 1):
                             continue
                         
                         V_new = Fs[k - 1][c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
@@ -97,7 +93,7 @@ def dymanic_programming(f: np.array, n: int, Y: int):
                             I[c, y_k] = y_k_1
         Fs[k] = F
         Is[k] = I
-    
+
     return F, Is
 
 
@@ -176,7 +172,12 @@ if __name__ == '__main__':
     
     n = f.shape[0]
     Y = f.shape[1]
-    C_max = (Y - 1) * (n + 1)
+    
+    # TODO: Should be
+    # C_max = (Y - 1) * (n + 1)
+    # but last iteration is not working
+    
+    C_max = (Y - 1) * n
 
     F, Is = dymanic_programming(f, n, Y)
         
