@@ -1,7 +1,6 @@
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
-from ilp import *
 
 try:
     from ilp import *
