@@ -12,11 +12,11 @@ def find_true_score(f, y):
 
 
 def backtrack(Is, F, c, Y):
-    # n = len(Is)
-    # C_max = (Y - 1) * (n + 1) + 1
-    # lb = max(0, c - C_max + 1)
+    n = len(Is)
+    C_max = (Y - 1) * (n + 1) + 1
+    lb = max(0, c - C_max + 1)
     
-    lb = 0
+    # lb = 0
     values = [F[c - y_n, y_n] for y_n in range(lb, min(Y, c))]
     
     y = np.argmax(values)
