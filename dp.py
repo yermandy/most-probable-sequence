@@ -1,23 +1,35 @@
 import numpy as np
 import numba
 import matplotlib.pyplot as plt
-from ilp import *
 
+try:
+    from ilp import *
+except ImportError as e:
+    print(e)
 
 def find_true_score(f, y):
     return np.sum(f[i, y[i], y[i + 1]] for i in range(len(f)))
 
-    
-# TODO fix last iterations issue
+
 def backtrack(Is, F, c, Y):
-    values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
-    idx = np.argmax(values)
-    objective = values[idx]
-    maximizers = [idx]
+    # n = len(Is)
+    # C_max = (Y - 1) * (n + 1) + 1
+    # lb = max(0, c - C_max + 1)
+    
+    lb = 0
+    values = [F[c - y_n, y_n] for y_n in range(lb, min(Y, c))]
+    
+    y = np.argmax(values)
+    objective = values[y]
+
+    y += lb
+    maximizers = [y]
+    
     for k in reversed(list(Is.keys())):
-        c -= idx
-        idx = Is[k][c, idx]
-        maximizers.insert(0, idx)
+        c -= y
+        y = Is[k][c, y]
+        maximizers.insert(0, y)
+
     return objective, np.array(maximizers)
 
 
@@ -64,30 +76,28 @@ def evaluate_loss(f, y_true):
     return margin_rescaling_loss, y_pred
 
 
-# TODO there is still a bug somewhere (in the last iteration)
+
 @numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
     
     Fs = {}
     Is = {}
     
+    C = Y
     for k in range(2, n + 2):
-        C = Y * (k - 1) + 1
-        # C = (Y - 1) * k + 1
+        C += Y - 1
         F = np.zeros((C, Y))
         I = np.full((C, Y), -1, dtype=np.int64)
-        # print(k)
         for c in range(0, C):
-            
             for y_k in range(0, Y):
                 V = -np.inf
-                for y_k_1 in range(0, min(Y, c)):
+                lb = 0
+                for y_k_1 in range(lb, min(Y, c)):
                     if k == 2:
                         F[c, y_k] = f[k - 2, y_k_1, y_k]
                         I[c, y_k] = y_k_1
                     else:
-                        if c - y_k_1 >= Y * (k - 2) + 1:
-                        # if c - y_k_1 >= (Y - 1) * (k - 1):
+                        if c - y_k_1 >= C - Y + 1:
                             continue
                         
                         V_new = Fs[k - 1][c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
@@ -97,7 +107,7 @@ def dymanic_programming(f: np.array, n: int, Y: int):
                             I[c, y_k] = y_k_1
         Fs[k] = F
         Is[k] = I
-    
+
     return F, Is
 
 
@@ -176,7 +186,12 @@ if __name__ == '__main__':
     
     n = f.shape[0]
     Y = f.shape[1]
-    C_max = (Y - 1) * (n + 1)
+    
+    # TODO: Should be
+    # C_max = (Y - 1) * (n + 1)
+    # but last iteration is not working
+    
+    C_max = (Y - 1) * n
 
     F, Is = dymanic_programming(f, n, Y)
         
