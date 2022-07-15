@@ -1,7 +1,7 @@
 import numpy as np
 
-def generate_random():
-    np.random.seed(42)
+def generate_random(seed=42):
+    np.random.seed(seed)
     
     f = np.random.rand(4, 3, 3)
     f[0, 1, 0] = 2
