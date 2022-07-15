@@ -7,26 +7,26 @@ try:
 except ImportError as e:
     print(e)
 
+
 def find_true_score(f, y):
     return np.sum(f[i, y[i], y[i + 1]] for i in range(len(f)))
 
 
-def backtrack(Is, F, c, Y):
+@numba.jit(nopython=True)
+def backtrack(Is: dict, F, c, Y):
     n = len(Is)
     C_max = (Y - 1) * (n + 1) + 1
     lb = max(0, c - C_max + 1)
     
-    # lb = 0
     values = [F[c - y_n, y_n] for y_n in range(lb, min(Y, c))]
-    # print(values)
     
-    y = np.argmax(values)
+    y = np.argmax(np.array(values))
     objective = values[y]
 
     y += lb
     maximizers = [y]
     
-    for k in reversed(list(Is.keys())):
+    for k in range(n + 1, 1, -1):
         c -= y
         y = Is[k][c, y]
         maximizers.insert(0, y)
