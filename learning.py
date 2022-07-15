@@ -1,5 +1,8 @@
 from dp import *
 import pickle
+import wandb
+import os
+from arguments import args
 
 
 class AdamW():
@@ -48,125 +51,171 @@ class AdamW():
         return w, b
 
 
+def batch(N, batch_size):
+    indices = np.arange(N)
+    np.random.shuffle(indices)
+    for i in range(0, N, batch_size):
+        yield np.array(indices[i : i + batch_size])
+
+
+def inference(features, y_true, w, b):
+    losses = []
+    rvces = []
+
+    for features_i, y_true_i in zip(features, y_true):
+        f = calc_f(features_i, w, b)
+    
+        loss, y_pred = evaluate_loss(f, y_true_i)
+        losses.append(loss)
+        
+        rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+        rvces.append(rvce)
+
+    mean_loss = np.mean(losses)
+    mean_rvce = np.mean(rvces)
+
+    return mean_loss, mean_rvce
+
+
+def load(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
+
+
+def load_params(run_name):
+    w = np.load(f'outputs/{run_name}/w.npy')
+    b = np.load(f'outputs/{run_name}/b.npy')
+    return w, b
+
+
+def set_seed(seed):
+    np.random.seed(seed)
+
+
 if __name__ == '__main__':
-    Y = 6
+    wandb.init(project="most-probable-sequence", entity="yermandy")
+
+    batch_size = args.batch_size
+    epochs = args.epochs
+    lr = args.lr
+    weight_decay = args.weight_decay
+    Y = args.Y
+    seed = args.seed
+
+    validation = args.validation
+    testing = args.testing
+
+    run_name = wandb.run.name
     
     root = 'files'
     
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
     
-    with open(f'{root}/y_trn_val.pickle', 'rb') as f:
-        y_true = pickle.load(f)
-    
-    with open(f'{root}/features_trn_val.pickle', 'rb') as f:
-        features = pickle.load(f)
-    
-    with open(f'{root}/y_tst.pickle', 'rb') as f:
-        y_true_tst = pickle.load(f)
-    
-    with open(f'{root}/features_tst.pickle', 'rb') as f:
-        features_tst = pickle.load(f)
-    
-    # print(f.shape)
-    # print(y_true.shape)
+    y_true_trn = load(f'{root}/y_trn.pickle')
+    features_trn = load(f'{root}/features_trn.pickle')
 
-    # n = f.shape[0]
-    # Y = f.shape[1]
+    y_true_val = load(f'{root}/y_val.pickle')
+    features_val = load(f'{root}/features_val.pickle')
     
-    rvces_epochs = []
-    losses_epochs = []
-    
-    rvces_epochs_tst = []
-    losses_epochs_tst = []
-    
-    
-    optim = AdamW(weight_decay=0.0001)
-    
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    
-    for i in range(500):
-        
-        # G, s, t = create_graph(f)
-        
-        dw = 0
-        db = 0
-        
-        rvces = []
-        losses = []
-        
-        losses_tst = []
-        rvces_tst = []
-        
-        for features_i, y_true_i in zip(features, y_true):
-        
-            f = calc_f(features_i, w, b)
-        
-            loss, y_pred = evaluate_loss(f, y_true_i)
-            losses.append(loss)
-            
-            rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
-            rvces.append(rvce)
-            
-            dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
-            
-            dw += dw_i
-            db += db_i
-                        
-        dw /= len(features)
-        db /= len(features)
-            
-        w, b = optim.step(i + 1, w, b, dw, db)
-        
-        for features_i, y_true_i in zip(features_tst, y_true_tst):
-            f = calc_f(features_i, w, b)
-        
-            loss, y_pred = evaluate_loss(f, y_true_i)
-            losses_tst.append(loss)
-            
-            rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
-            rvces_tst.append(rvce)
+    y_true_tst = load(f'{root}/y_tst.pickle')
+    features_tst = load(f'{root}/features_tst.pickle')
 
-        rvce = np.mean(rvces)
-        loss = np.mean(losses)
-        
-        print(f'i: {i} | loss: {loss:.2f} | rvce: {rvce:.2f} | weights: {np.sum(w ** 2)}')
-        
-        rvces_epochs.append(rvce)
-        losses_epochs.append(loss)
-        
-        rvces_epochs_tst.append(np.mean(rvces_tst))
-        losses_epochs_tst.append(np.mean(losses_tst))
-        
-        axes[0].cla()
-        axes[0].set_title('margin rescaling loss')
-        axes[0].set_xlabel('iteration')
-        axes[0].set_ylabel('margin rescaling loss')
-        axes[0].plot(losses_epochs, label='trn, val')
-        axes[0].plot(losses_epochs_tst, label='tst')
-        
-        axes[1].cla()
-        axes[1].set_title('rvce')
-        axes[1].set_xlabel('iteration')
-        axes[1].set_ylabel('rvce')
-        axes[1].plot(rvces_epochs, label='trn, val')
-        axes[1].plot(rvces_epochs_tst, label='tst')
-        
-        for ax in axes: ax.legend()
+    set_seed(seed)
     
-        plt.tight_layout()
-        plt.pause(.0001)
-        
-        
-    # fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    # axes[0].set_title('margin rescaling loss')
-    # axes[0].set_xlabel('iteration')
-    # axes[0].set_ylabel('margin rescaling loss')
-    # axes[0].plot(losses_epochs)
+    optim = AdamW(lr=lr, weight_decay=weight_decay)
+
+    loss_val_best = np.inf
+    rvce_val_best = np.inf
+
+    wandb.config.update({
+        'lr': lr,
+        'epochs': epochs,
+        'batch_size': batch_size,
+        'weight_decay': weight_decay,
+        'Y': Y,
+        'validation': validation,
+        'testing': testing,
+        'seed': seed,
+    })
+
+    os.makedirs(f'outputs/{run_name}')
     
-    # axes[1].set_title('rvce')
-    # axes[1].set_xlabel('iteration')
-    # axes[1].set_ylabel('rvce')
-    # axes[1].plot(rvces_epochs)
-    
-    plt.savefig('outputs/plot_trn_val.png')
+    for i in range(epochs):                
+        rvces_trn = []
+        losses_trn = []
+
+        for indices in batch(len(features_trn), batch_size):
+            dw = 0
+            db = 0
+
+            for idx in indices:
+                features_i = features_trn[idx]
+                y_true_i = y_true_trn[idx]
+            
+                f = calc_f(features_i, w, b)
+            
+                loss, y_pred = evaluate_loss(f, y_true_i)
+                losses_trn.append(loss)
+                
+                rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+                rvces_trn.append(rvce)
+                
+                dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
+
+                dw += dw_i
+                db += db_i  
+
+            dw /= len(indices)
+            db /= len(indices)
+
+            w, b = optim.step(i + 1, w, b, dw, db)
+
+        mean_rvce = np.mean(rvces_trn)
+        mean_loss = np.mean(losses_trn)
+
+        print(f'i: {i} | loss: {mean_loss:.2f} | rvce: {mean_rvce:.2f} | weights: {np.sum(w ** 2)}')
+
+        log = {
+            'trn loss': mean_loss,
+            'trn rvce': mean_rvce,
+            'weights': np.sum(w ** 2),
+            'biases': np.sum(b ** 2)
+        }
+
+        if validation:
+
+            loss_val, rvce_val = inference(features_val, y_true_val, w, b)
+
+            if loss_val <= loss_val_best and rvce_val <= rvce_val_best:
+                loss_val_best = loss_val
+                rvce_val_best = rvce_val
+
+                np.save(f'outputs/{run_name}/w.npy', w)
+                np.save(f'outputs/{run_name}/b.npy', b)
+
+            log.update({
+                'val loss': loss_val,
+                'val rvce': rvce_val,
+                'val rvce best': rvce_val_best,
+                'val loss best': loss_val_best
+            })
+
+        if testing:
+
+            loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
+            
+            log.update({
+                'tst loss': loss_tst,
+                'tst rvce': rvce_tst
+            })
+
+        wandb.log(log)
+
+    w, b = load_params(run_name)
+    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
+
+    log.update({
+        'final tst loss': loss_tst,
+        'final tst rvce': rvce_tst
+    })
