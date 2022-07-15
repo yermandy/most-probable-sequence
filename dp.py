@@ -185,11 +185,7 @@ if __name__ == '__main__':
     n = f.shape[0]
     Y = f.shape[1]
     
-    # TODO: Should be
-    # C_max = (Y - 1) * (n + 1)
-    # but last iteration is not working
-    
-    C_max = (Y - 1) * n
+    C_max = (Y - 1) * (n + 1) + 1
 
     F, Is = dymanic_programming(f, n, Y)
         
