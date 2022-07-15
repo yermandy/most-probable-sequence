@@ -113,10 +113,10 @@ if __name__ == '__main__':
     
     n = f.shape[0]
     Y = f.shape[1]
-    C_max = (Y - 1) * (n + 1)
+    C_max = (Y - 1) * (n + 1) + 1
 
     print('ILP')
-    for c in range(C_max + 1):
+    for c in range(C_max):
         print(c, *evaluate(f, G, s, t, c))
     
     draw(G)
