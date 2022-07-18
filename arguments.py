@@ -10,5 +10,6 @@ parser.add_argument('--seed', type=int, default=42, help='seed')
 parser.add_argument('--Y', type=int, default=6, help='Y - number of events in small window')
 parser.add_argument('--validation', type=bool, default=True, help='use validation set')
 parser.add_argument('--testing', type=bool, default=False, help='use testing set')
+parser.add_argument('--optim', type=str, default='AdamW', help='optimizer to use', choices=['AdamW', 'SGD'])
 
 args = parser.parse_args()

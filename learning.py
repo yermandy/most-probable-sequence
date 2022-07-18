@@ -3,7 +3,7 @@ import pickle
 import wandb
 import os
 from arguments import args
-
+from torch
 
 class AdamW():
     def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0):
@@ -22,6 +22,7 @@ class AdamW():
     def step(self, t, w, b, dw, db):
         if self.weight_decay > 0:
             dw = dw + self.weight_decay * w
+            #! bias decay?
             db = db + self.weight_decay * b
         
         # Update biased first moment estimate
@@ -35,7 +36,7 @@ class AdamW():
         # Compute bias-corrected first moment estimate
         m_dw_corr = self.m_dw / (1 - self.beta1 ** t)
         m_db_corr = self.m_db / (1 - self.beta1 ** t)
-        
+
         # Compute bias-corrected second raw moment estimate
         v_dw_corr = self.v_dw / (1 - self.beta2 ** t)
         v_db_corr = self.v_db / (1 - self.beta2 ** t)
@@ -46,6 +47,26 @@ class AdamW():
         
         if self.weight_decay > 0:
             w = w - self.weight_decay * w
+            #! bias decay?
+            b = b - self.weight_decay * b
+            
+        return w, b
+
+
+class SGD():
+    def __init__(self, lr=0.001, weight_decay=0):
+        self.lr = lr
+        self.weight_decay = weight_decay
+
+
+    def step(self, t, w, b, dw, db):
+        # Update parameters
+        w = w - self.lr * dw
+        b = b - self.lr * db
+
+        if self.weight_decay > 0:
+            w = w - self.weight_decay * w
+            #! bias decay?
             b = b - self.weight_decay * b
             
         return w, b
@@ -92,6 +113,15 @@ def set_seed(seed):
     np.random.seed(seed)
 
 
+def get_optim(optim_name, lr, weight_decay):
+    if optim_name == 'AdamW':
+        return AdamW(lr=lr, weight_decay=weight_decay)
+    elif optim_name == 'SGD':
+        return SGD(lr=lr, weight_decay=weight_decay)
+    else:
+        raise ValueError(f'Unknown optimizer {optim_name}')
+
+
 if __name__ == '__main__':
     wandb.init(project="most-probable-sequence", entity="yermandy")
 
@@ -101,6 +131,7 @@ if __name__ == '__main__':
     weight_decay = args.weight_decay
     Y = args.Y
     seed = args.seed
+    optim_name = args.optim
 
     validation = args.validation
     testing = args.testing
@@ -123,7 +154,7 @@ if __name__ == '__main__':
 
     set_seed(seed)
     
-    optim = AdamW(lr=lr, weight_decay=weight_decay)
+    optim = get_optim(optim_name, lr, weight_decay)
 
     loss_val_best = np.inf
     rvce_val_best = np.inf
@@ -137,6 +168,7 @@ if __name__ == '__main__':
         'validation': validation,
         'testing': testing,
         'seed': seed,
+        'optim_name': optim_name,
     })
 
     os.makedirs(f'outputs/{run_name}')
@@ -215,7 +247,7 @@ if __name__ == '__main__':
     w, b = load_params(run_name)
     loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
 
-    log.update({
+    wandb.log({
         'final tst loss': loss_tst,
         'final tst rvce': rvce_tst
     })
