@@ -3,7 +3,6 @@ import pickle
 import wandb
 import os
 from arguments import args
-from torch
 
 class AdamW():
     def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0):
@@ -143,11 +142,11 @@ if __name__ == '__main__':
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
     
-    y_true_trn = load(f'{root}/y_trn.pickle')
-    features_trn = load(f'{root}/features_trn.pickle')
+    y_true_trn = load(f'{root}/y_trn_1_min.pickle')
+    features_trn = load(f'{root}/features_trn_1_min.pickle')
 
-    y_true_val = load(f'{root}/y_val.pickle')
-    features_val = load(f'{root}/features_val.pickle')
+    y_true_val = load(f'{root}/y_val_1_min.pickle')
+    features_val = load(f'{root}/features_val_1_min.pickle')
     
     y_true_tst = load(f'{root}/y_tst.pickle')
     features_tst = load(f'{root}/features_tst.pickle')
@@ -169,6 +168,9 @@ if __name__ == '__main__':
         'testing': testing,
         'seed': seed,
         'optim_name': optim_name,
+        'n_trn_samples': len(y_true_trn),
+        'n_val_samples': len(y_true_val),
+        'sample_duration': 1,
     })
 
     os.makedirs(f'outputs/{run_name}')
