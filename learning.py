@@ -86,6 +86,7 @@ def inference(features, y_true, w, b):
         f = calc_f(features_i, w, b)
     
         loss, y_pred = evaluate_loss(f, y_true_i)
+
         losses.append(loss)
         
         rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
@@ -153,14 +154,14 @@ if __name__ == '__main__':
     
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
-    
-    y_true_trn = load(f'{root}/y_trn_1_min.pickle')
-    features_trn = load(f'{root}/features_trn_1_min.pickle')
+
+    y_true_trn = load(f'{root}/y_trn_5_min.pickle')
+    features_trn = load(f'{root}/features_trn_5_min.pickle')
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
     y_true_val = load(f'{root}/y_val.pickle')
     features_val = load(f'{root}/features_val.pickle')
-    # y_true_val, features_val = filter_data(y_true_val, features_val)
+    y_true_val, features_val = filter_data(y_true_val, features_val)
     
     y_true_tst = load(f'{root}/y_tst.pickle')
     features_tst = load(f'{root}/features_tst.pickle')
@@ -184,7 +185,7 @@ if __name__ == '__main__':
         'optim_name': optim_name,
         'n_trn_samples': len(y_true_trn),
         'n_val_samples': len(y_true_val),
-        'sample_duration': 1,
+        'sample_duration': 5,
     })
 
     os.makedirs(f'outputs/{run_name}')
@@ -194,8 +195,8 @@ if __name__ == '__main__':
         losses_trn = []
 
         for indices in batch(len(features_trn), batch_size):
-            dw = 0
-            db = 0
+            dw = []
+            db = []
 
             for idx in indices:
                 features_i = features_trn[idx]
@@ -212,11 +213,11 @@ if __name__ == '__main__':
                 
                 dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
 
-                dw += dw_i
-                db += db_i  
+                dw.append(dw_i)
+                db.append(db_i)
 
-            dw /= len(indices)
-            db /= len(indices)
+            dw = np.mean(dw, axis=0)
+            db = np.mean(db, axis=0)
 
             w, b = optim.step(i + 1, w, b, dw, db)
 
