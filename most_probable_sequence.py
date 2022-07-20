@@ -15,13 +15,13 @@ def most_probable_sequence(f):
     sequence : np.ndarray
         Sequence of size (n + 1)
     """
-    f = np.copy(f)
+    f = np.copy(f).astype(float)
     
     n = f.shape[0]
     Y = f.shape[1]
 
     I = np.zeros((Y, n), dtype=int)
-    F = np.zeros((Y, n))
+    F = np.zeros((Y, n), dtype=float)
 
     for i in range(n):
         for k in range(Y):
