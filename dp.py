@@ -13,14 +13,14 @@ def find_true_score(f, y):
 
 
 @numba.jit(nopython=True)
-def backtrack(Is: dict, F, c, Y):
-    n = len(Is)
-    C_max = (Y - 1) * (n + 1) + 1
-    lb = max(0, c - C_max + 1)
+def backtrack(Is: dict, F: np.array, c: int, Y: int):
+    n = len(Is)    
+    C = F.shape[0]
+    lb = max(0, c - C + 1)
+    F = np.flipud(F)
+    values = np.diag(F, k=c - C + 1)
     
-    values = [F[c - y_n, y_n] for y_n in range(lb, min(Y, c))]
-    
-    y = np.argmax(np.array(values))
+    y = np.argmax(np.asarray(values))
     objective = values[y]
 
     y += lb
@@ -40,15 +40,14 @@ def optimal_c(F, c_hat, Y, n):
     c_best = None
     score_best = None
     
-    C_max = (Y - 1) * (n + 1)
-    for c in range(1, C_max + 1):
+    C_max = (Y - 1) * n
+    for c in range(0, C_max + 1):
         score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
         rvce_loss = abs(c - c_hat) / c_hat
         objective = rvce_loss + score
-        # print(c, objective)
         if objective > objective_best:
             objective_best = objective
-            c_best = c - 1
+            c_best = c
             score_best = score
     
     return c_best, objective_best
@@ -66,12 +65,11 @@ def evaluate_loss(f, y_true):
     
     margin_rescaling_loss = objective_best - true_score
     
-    # Notice, c_best should be c_best = c - 1
     # G, s, t = create_graph(f)
     # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
     
-    objective, y_pred = backtrack(Is, F, c_best + 1, Y)
+    objective, y_pred = backtrack(Is, F, c_best, Y)
     # print('dp objective', objective)
     
     return margin_rescaling_loss, y_pred
@@ -80,32 +78,36 @@ def evaluate_loss(f, y_true):
 
 @numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
-    
-    Fs = {}
     Is = {}
     
+    F_prev = np.zeros((Y, Y), dtype=np.float64)
+    I = np.full((Y, Y), -1, dtype=np.int64)
+    for c in range(0, Y):
+        for y_k in range(0, Y):
+            F_prev[c, y_k] = f[0, c, y_k]
+            I[c, y_k] = c
+    
+    Is[2] = I
+    
     C = Y
-    for k in range(2, n + 2):
+    for k in range(3, n + 2):
         C += Y - 1
         F = np.zeros((C, Y))
         I = np.full((C, Y), -1, dtype=np.int64)
         for c in range(0, C):
             for y_k in range(0, Y):
                 V = -np.inf
-                lb = max(0, c - C + Y + 1)
-                for y_k_1 in range(lb, min(Y, c)):
-                    if k == 2:
-                        F[c, y_k] = f[k - 2, y_k_1, y_k]
+                lb = max(0, c - C + Y)
+                for y_k_1 in range(lb, min(Y, c + 1)):
+                    V_new = F_prev[c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
+                    if V_new > V:
+                        V = V_new
+                        F[c, y_k] = V
                         I[c, y_k] = y_k_1
-                    else:
-                        V_new = Fs[k - 1][c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
-                        if V_new > V:
-                            V = V_new
-                            F[c, y_k] = V
-                            I[c, y_k] = y_k_1
-        Fs[k] = F
+        F_prev = F
         Is[k] = I
 
+    # print(F)
     return F, Is
 
 
@@ -185,11 +187,11 @@ if __name__ == '__main__':
     n = f.shape[0]
     Y = f.shape[1]
     
-    C_max = (Y - 1) * (n + 1) + 1
+    C_max = (Y - 1) * n
 
     F, Is = dymanic_programming(f, n, Y)
         
     print('DP')
-    for c in range(1, C_max + 1):
+    for c in range(0, C_max + 1):
         objective, maximizers = backtrack(Is, F, c, Y)
-        print(c - 1, objective, maximizers)
+        print(c, objective, maximizers)
