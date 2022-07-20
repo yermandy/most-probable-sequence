@@ -172,3 +172,10 @@ if __name__ == '__main__':
     for c in range(0, C_max + 1):
         objective, maximizers = backtrack(Is, F, c, Y)
         print(c, objective, maximizers)
+        
+        # ? assert that DP objective calculated correctly
+        longest_path = find_true_score(f, maximizers)
+        assert longest_path - objective < 1e-8, f'{longest_path} != {objective}'
+        
+        # ? assert that DP objective is feasible
+        assert c == maximizers.sum(), f'{c} != {maximizers.sum()}'
