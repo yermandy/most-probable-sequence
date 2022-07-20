@@ -108,32 +108,8 @@ def dymanic_programming(f: np.array, n: int, Y: int):
         F_prev = F
         Is[k] = I
 
-    # print(F)
     return F, Is
 
-
-def optimize_c(f):
-    n = f.shape[0]
-    Y = f.shape[1]
-    
-    F, Is = dymanic_programming(f, n, Y)
-    
-    obj_best = -np.inf
-    c_best = None
-    
-    for c in range(1, (Y - 1) * (n - 1) + 2):
-        values = [F[c - y_n, y_n] for y_n in range(0, min(Y, c))]
-        obj = max(values)
-        # print(c - 1, obj)
-        if obj > obj_best:
-            obj_best = obj
-            c_best = c - 1
-            
-    print(c_best)
-    print(obj_best)
-            
-    return c_best, obj_best
-    
 
 @numba.jit(nopython=True)
 def calc_grads(features, w, b, y_true, y_pred):
