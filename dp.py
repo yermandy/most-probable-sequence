@@ -38,17 +38,18 @@ def backtrack(Is: dict, F: np.array, c: int, Y: int):
 def optimal_c(F, c_hat, Y, n):
     objective_best = -np.inf
     c_best = None
-    score_best = None
-    
+    F = np.flipud(F)
     C_max = (Y - 1) * n
     for c in range(0, C_max + 1):
-        score = max([F[c - y_n, y_n] for y_n in range(0, min(Y, c))])
+        C = F.shape[0]
+        
+        score = np.max(np.diag(F, k=c - C + 1))
+        
         rvce_loss = abs(c - c_hat) / c_hat
         objective = rvce_loss + score
         if objective > objective_best:
             objective_best = objective
             c_best = c
-            score_best = score
     
     return c_best, objective_best
     
