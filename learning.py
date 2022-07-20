@@ -121,8 +121,20 @@ def get_optim(optim_name, lr, weight_decay):
         raise ValueError(f'Unknown optimizer {optim_name}')
 
 
+def filter_data(y, features):
+    y_filtered = []
+    features_filtered = []
+    for y_i, features_i in zip(y, features):
+        if y_i.sum() > 0:
+            y_filtered.append(y_i)
+            features_filtered.append(features_i)
+    return y_filtered, features_filtered
+
+
 if __name__ == '__main__':
-    wandb.init(project="most-probable-sequence", entity="yermandy")
+    os.environ['WANDB_MODE'] = 'disabled'
+
+    run = wandb.init(project="most-probable-sequence", entity="yermandy")
 
     batch_size = args.batch_size
     epochs = args.epochs
@@ -144,9 +156,11 @@ if __name__ == '__main__':
     
     y_true_trn = load(f'{root}/y_trn_1_min.pickle')
     features_trn = load(f'{root}/features_trn_1_min.pickle')
+    y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
-    y_true_val = load(f'{root}/y_val_1_min.pickle')
-    features_val = load(f'{root}/features_val_1_min.pickle')
+    y_true_val = load(f'{root}/y_val.pickle')
+    features_val = load(f'{root}/features_val.pickle')
+    # y_true_val, features_val = filter_data(y_true_val, features_val)
     
     y_true_tst = load(f'{root}/y_tst.pickle')
     features_tst = load(f'{root}/features_tst.pickle')
@@ -192,7 +206,8 @@ if __name__ == '__main__':
                 loss, y_pred = evaluate_loss(f, y_true_i)
                 losses_trn.append(loss)
                 
-                rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
+                y_true_i_sum = y_true_i.sum()
+                rvce = abs(y_pred.sum() - y_true_i_sum) / y_true_i_sum
                 rvces_trn.append(rvce)
                 
                 dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
@@ -208,7 +223,7 @@ if __name__ == '__main__':
         mean_rvce = np.mean(rvces_trn)
         mean_loss = np.mean(losses_trn)
 
-        print(f'i: {i} | loss: {mean_loss:.2f} | rvce: {mean_rvce:.2f} | weights: {np.sum(w ** 2)}')
+        print(f'trn | i: {i} | loss: {mean_loss:.2f} | rvce: {mean_rvce:.2f}')
 
         log = {
             'trn loss': mean_loss,
@@ -235,6 +250,8 @@ if __name__ == '__main__':
                 'val loss best': loss_val_best
             })
 
+            print(f'val | i: {i} | loss: {loss_val:.2f} | rvce: {rvce_val:.2f}')
+
         if testing:
 
             loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
@@ -243,6 +260,8 @@ if __name__ == '__main__':
                 'tst loss': loss_tst,
                 'tst rvce': rvce_tst
             })
+
+            print(f'tst | i: {i} | loss: {loss_tst:.2f} | rvce: {rvce_tst:.2f}')
 
         wandb.log(log)
 
@@ -253,3 +272,5 @@ if __name__ == '__main__':
         'final tst loss': loss_tst,
         'final tst rvce': rvce_tst
     })
+
+    run.finish()
