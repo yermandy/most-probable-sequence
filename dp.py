@@ -8,7 +8,7 @@ except ImportError as e:
     print(e)
 
 
-def find_true_score(f, y):
+def calculate_score(f, y):
     return np.sum(f[i, y[i], y[i + 1]] for i in range(len(f)))
 
 
@@ -35,18 +35,16 @@ def backtrack(Is: dict, F: np.array, c: int, Y: int):
 
 
 @numba.jit(nopython=True)
-def optimal_c(F, c_hat, Y, n):
+def optimal_c(F, c_true, Y, n):
     objective_best = -np.inf
     c_best = None
+    C = F.shape[0]
     F = np.flipud(F)
     C_max = (Y - 1) * n
     for c in range(0, C_max + 1):
-        C = F.shape[0]
-        
         score = np.max(np.diag(F, k=c - C + 1))
-        
-        rvce_loss = abs(c - c_hat) / c_hat
-        objective = rvce_loss + score
+        rvce_loss = abs(c - c_true) / c_true
+        objective = rvce_loss + score / n
         if objective > objective_best:
             objective_best = objective
             c_best = c
@@ -62,9 +60,9 @@ def evaluate_loss(f, y_true):
     
     c_best, objective_best = optimal_c(F, y_true.sum(), Y, n)
     
-    true_score = find_true_score(f, y_true)
+    true_score = calculate_score(f, y_true)
     
-    margin_rescaling_loss = objective_best - true_score
+    margin_rescaling_loss = objective_best - true_score / n
     
     # G, s, t = create_graph(f)
     # objective, y_pred = evaluate(f, G, s, t, c_best)
@@ -126,19 +124,12 @@ def calc_grads(features, w, b, y_true, y_pred):
         b_grad[z_pred] += 1
         b_grad[z_true] -= 1
     
+    # normalize
+    n = len(y_true) - 1
+    w_grad /= n
+    b_grad /= n
+
     return w_grad, b_grad
-
-
-def update_params_sgd(features, w, b, y_true, y_pred, lr=1e-5, weight_decay=0.0):
-    w_grad, b_grad = calc_grads(features, w, b, y_true, y_pred)
-    
-    if weight_decay > 0:
-        w_grad += weight_decay * w
-        
-    w = w - lr * w_grad
-    b = b - lr * b_grad
-    
-    return w, b
 
 
 @numba.jit(nopython=True)
@@ -174,7 +165,7 @@ if __name__ == '__main__':
         print(c, objective, maximizers)
         
         # ? assert that DP objective calculated correctly
-        longest_path = find_true_score(f, maximizers)
+        longest_path = calculate_score(f, maximizers)
         assert longest_path - objective < 1e-8, f'{longest_path} != {objective}'
         
         # ? assert that DP objective is feasible
