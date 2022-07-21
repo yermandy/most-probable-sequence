@@ -25,7 +25,7 @@ for seed in range(0, 100):
         print()
         
         # ? assert that DP objective calculated correctly
-        longest_path = find_true_score(f, maximizers_dp)
+        longest_path = calculate_score(f, maximizers_dp)
         assert longest_path - objective_dp < 1e-8, f'{longest_path} != {objective_dp}'
         
         # ? assert that DP objective is feasible
