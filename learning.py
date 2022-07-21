@@ -3,6 +3,7 @@ import pickle
 import wandb
 import os
 from arguments import args
+from most_probable_sequence import most_probable_sequence
 
 class AdamW():
     def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0):
@@ -78,21 +79,23 @@ def batch(N, batch_size):
         yield np.array(indices[i : i + batch_size])
 
 
-def inference(features, y_true, w, b):
+def inference(features, y_true, w, b, calculate_loss=False):
     losses = []
     rvces = []
 
     for features_i, y_true_i in zip(features, y_true):
         f = calc_f(features_i, w, b)
     
-        loss, y_pred = evaluate_loss(f, y_true_i)
+        if calculate_loss:
+            loss, y_pred = evaluate_loss(f, y_true_i)
+            losses.append(loss)
 
-        losses.append(loss)
+        _, y_pred = most_probable_sequence(f)
         
         rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
         rvces.append(rvce)
 
-    mean_loss = np.mean(losses)
+    mean_loss = np.mean(losses) if calculate_loss else 0
     mean_rvce = np.mean(rvces)
 
     return mean_loss, mean_rvce
@@ -133,7 +136,7 @@ def filter_data(y, features):
 
 
 if __name__ == '__main__':
-    os.environ['WANDB_MODE'] = 'disabled'
+    # os.environ['WANDB_MODE'] = 'disabled'
 
     run = wandb.init(project="most-probable-sequence", entity="yermandy")
 
@@ -154,9 +157,9 @@ if __name__ == '__main__':
     
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
-
-    y_true_trn = load(f'{root}/y_trn_5_min.pickle')
-    features_trn = load(f'{root}/features_trn_5_min.pickle')
+    
+    y_true_trn = load(f'{root}/y_trn.pickle')
+    features_trn = load(f'{root}/features_trn.pickle')
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
     y_true_val = load(f'{root}/y_val.pickle')
@@ -185,7 +188,8 @@ if __name__ == '__main__':
         'optim_name': optim_name,
         'n_trn_samples': len(y_true_trn),
         'n_val_samples': len(y_true_val),
-        'sample_duration': 5,
+        'sample_duration': 20,
+        'normalization_in_loss': True
     })
 
     os.makedirs(f'outputs/{run_name}')
