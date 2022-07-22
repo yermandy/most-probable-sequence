@@ -31,11 +31,13 @@ $$
 \end{align}
 $$
 
-where $\bar c = \sum_{i=1}^{n} \bar y_i$, $\bar y_i$ denote ground true labeling for $i$-th window.
+$$\bar c = \sum_{i=1}^{n} \bar y_i$$
+
+where $\bar y_i$ denote the ground truth labeling for $i$-th window.
 
 #### Solving $F(c)$ efficiently with Dynamic Programming
 
-Define $F_k(c, y_k)$ as
+Let $F_k(c, y_k)$ has the following form:
 
 $$
 \begin{align}
@@ -46,14 +48,22 @@ $$
 \end{align}
 $$
 
-where $l(c, k) = \max(0, c - (Y-1)\cdot(k - 2))$ and $u(c) = \min(c, Y)$
+where 
+$$
+\begin{align}
+l(c, k) &= \max(0, c - (Y-1)\cdot(k - 2)) \\
+u(c) &= \min(c, Y)
+\end{align}
+$$
 
-then
+Then we can define $F(c)$ as
 
 $$
 \begin{align}
 F(c) &= \max_{y_1 + ... + y_n = c}\sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1}) \\
-     &= \max_{y \in \{ l(c, n),...,u(c)\}} F_n(c - y, y)
+     &= \max_{y_n \in \{ l(c, n),...,u(c)\}} F_n(c - y_n, y_n)
 \end{align}
 $$
+
+
 
