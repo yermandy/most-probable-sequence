@@ -68,6 +68,18 @@ $$
 
 #### Example
 
+1st iteration:
+
 $$
-F_2(c, y_2) = f_1(c, y_2) \quad \forall c \in \lbrace 0,\dots, Y\rbrace 
+F_2(c, y_2) = f_1(c, y_2) \quad \forall c \in \lbrace 0,\dots, Y\rbrace \quad \forall y_2 \in \lbrace 0,\dots, Y\rbrace
+$$
+
+2nd iteration:
+
+$$
+\begin{align}
+F_3(c, y_3) &= \max_{y_1 + y_2 = c} \Big[ f_1(y_1, y_2) + f_2(y_2, y_3) \Big] \\
+&= \max_{y_2 \in \lbrace l(c, 3),...,u(c)\rbrace} \Big[ F_2(c - y_2, y_2) + f_2(y_2, y_3) \Big] \\
+&\forall c \in \lbrace 0,\dots, 2 \cdot Y\rbrace \quad \forall y_3 \in \lbrace 0,\dots, Y\rbrace
+\end{align}
 $$
