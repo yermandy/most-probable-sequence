@@ -30,3 +30,30 @@ $$
     &= \max_{c \in \{0, ... , n \cdot Y\}} \Big[ \frac{1}{\bar{c}} |c - \bar{c}| + F(c)  \Big] - \sum_{i=1}^{n-1} f_{i}(\bar y_i, \bar y_{i+1})
 \end{align}
 $$
+
+where $\bar c = \sum_{i=1}^{n} \bar y_i$, $\bar y_i$ denote ground true labeling for $i$-th window.
+
+#### Solving $F(c)$ efficiently with Dynamic Programming
+
+Define $F_k(c, y_k)$ as
+
+$$
+\begin{align}
+    F_k(c, y_k) &= \max_{y_1+...+y_n=c} \Big[ \sum_{i=1}^{k-2} f_{i}(y_i,y_{i+1}) + f_{k-1}(y_{k-1},y_{k}) \Big] \\
+    &= \max_{y_{k-1} \in \{ l(c, k),...,u(c)\} } \Big[ F_{k-1}(c-y_{k-1}, y_{k-1}) + f_{k-1}(y_{k-1},y_{k}) \Big] \\
+    \forall c &\in \{ 0,\dots, (k - 1) \cdot (Y - 1) + 1 \} \\
+    \forall y_k &\in \{ 0,\dots, Y\}
+\end{align}
+$$
+
+where $l(c, k) = \max(0, c - (Y-1)\cdot(k - 2))$ and $u(c) = \min(c, Y)$
+
+then
+
+$$
+\begin{align}
+F(c) &= \max_{y_1 + ... + y_n = c}\sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1}) \\
+     &= \max_{y \in \{ l(c, n),...,u(c)\}} F_n(c - y, y)
+\end{align}
+$$
+
