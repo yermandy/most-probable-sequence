@@ -49,6 +49,7 @@ $$
 $$
 
 where 
+
 $$
 \begin{align}
 l(c, k) &= \max(0, c - (Y-1)\cdot(k - 2)) \\
