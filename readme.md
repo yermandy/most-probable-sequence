@@ -83,3 +83,16 @@ F_3(c, y_3) &= \max_{y_1 + y_2 = c} \Big[ f_1(y_1, y_2) + f_2(y_2, y_3) \Big] \\
 &\forall c \in \lbrace 0,\dots, 2 \cdot Y\rbrace \quad \forall y_3 \in \lbrace 0,\dots, Y\rbrace
 \end{align}
 $$
+
+#### Learning
+
+Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x, \bar y)$
+
+$$
+\begin{align}
+g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (\llbracket \hat{y}_i + \hat{y}_{i+1} = z \rrbracket - \llbracket \bar{y}_i + \bar{y}_{i+1} = z \rrbracket)} \\
+g_b(z) &= \sum_{i=1}^{n-1} {(\llbracket \hat{y}_i + \hat{y}_{i+1} = z \rrbracket - \llbracket \bar{y}_i + \bar{y}_{i+1} = z \rrbracket)}
+\end{align}
+$$
+
+where $\phi(x)$ are features, $\hat{y}_i$ are predicted and $\bar{y}_i$ are the ground truth labels for $i$-th window.
