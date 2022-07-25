@@ -5,12 +5,11 @@ from most_probable_sequence import most_probable_sequence
 
 
 root = 'files'
-part = 'tst'
 
-with open(f'{root}/y_{part}.pickle', 'rb') as f:
+with open(f'{root}/tst/y.pickle', 'rb') as f:
     y_true = pickle.load(f)
     
-with open(f'{root}/features_{part}.pickle', 'rb') as f:
+with open(f'{root}/tst/features.pickle', 'rb') as f:
     features = pickle.load(f)
 
 
@@ -72,11 +71,10 @@ def evaluate(run_name=None):
 
 
 runs = [
-    'dark-forest-198',
-    'eager-dew-199',
-    'scarlet-plasma-200'
-    # 'prime-dew-144',
-    # 'twilight-music-135',
+    'resilient-fire-308',
+    'lemon-tree-298',
+    'honest-valley-303',
+    'charmed-snowball-290'
 ]
 
 evaluate_map()
