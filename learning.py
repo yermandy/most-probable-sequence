@@ -68,7 +68,7 @@ class SGD():
 
         if self.weight_decay > 0:
             w = w - lr * self.weight_decay * w
-            
+
             # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
             # b = b - lr * self.weight_decay * b
             
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
 
-    trn_folder = 'files/trn/shuffled/10_minutes/10_samples'
+    trn_folder = 'files/trn/shuffled/5_minutes/10_samples'
     val_folder = 'files/val/shuffled/whole_file'
     tst_folder = 'files/tst'
     
@@ -203,8 +203,8 @@ if __name__ == '__main__':
 
     os.makedirs(f'outputs/{run_name}')
 
-    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
-    loss_val, rvce_val = inference(features_val, y_true_val, w, b)
+    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b, calculate_loss=True)
+    loss_val, rvce_val = inference(features_val, y_true_val, w, b, calculate_loss=True)
 
     wandb.log({
         'initial tst loss': loss_tst,
@@ -292,11 +292,14 @@ if __name__ == '__main__':
         wandb.log(log)
 
     w, b = load_params(run_name)
-    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
+    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b, calculate_loss=True)
+    loss_val, rvce_val = inference(features_val, y_true_val, w, b, calculate_loss=True)
 
     wandb.log({
         'final tst loss': loss_tst,
-        'final tst rvce': rvce_tst
+        'final tst rvce': rvce_tst,
+        'final val loss': loss_val,
+        'final val rvce': rvce_val
     })
 
     run.finish()
