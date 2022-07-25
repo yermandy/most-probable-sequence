@@ -138,6 +138,19 @@ def filter_data(y, features):
     return y_filtered, features_filtered
 
 
+def collect_folders(folders):
+    folders = folders if type(folders) is list else [folders]
+
+    features = []
+    y = []
+
+    for folder in folders:
+        y.extend(load(f'{folder}/y.pickle'))
+        features.extend(load(f'{folder}/features.pickle'))
+
+    return y, features
+
+
 if __name__ == '__main__':
     # os.environ['WANDB_MODE'] = 'disabled'
 
@@ -161,12 +174,11 @@ if __name__ == '__main__':
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
 
-    trn_folder = 'files/trn/shuffled/5_minutes/10_samples'
+    trn_folder = ['files/trn/shuffled/5_minutes/10_samples', 'files/trn/shuffled/10_minutes/10_samples']
     val_folder = 'files/val/shuffled/whole_file'
     tst_folder = 'files/tst'
     
-    y_true_trn = load(f'{trn_folder}/y.pickle')
-    features_trn = load(f'{trn_folder}/features.pickle')
+    y_true_trn, features_trn = collect_folders(trn_folder)
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
     y_true_val = load(f'{val_folder}/y.pickle')
