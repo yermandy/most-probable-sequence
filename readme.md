@@ -90,8 +90,8 @@ Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x
 
 $$
 \begin{align}
-g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ \hat y_i + \hat y_{i+1} = z \⟧ - \⟦ \bar y_i + \bar y_{i+1} = z \⟧)} \\
-g_b(z) &= \sum_{i=1}^{n-1} {(\⟦ \hat y_i + \hat y_{i+1} = z \⟧ - \⟦ \bar y_i + \bar y_{i+1} = z \⟧)}
+g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ \hat y_i + \hat y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)} \\
+g_b(z) &= \sum_{i=1}^{n-1} {(⟦ \hat y_i + \hat y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)}
 \end{align}
 $$
 
