@@ -46,9 +46,9 @@ class AdamW():
         b = b - self.lr * m_db_corr / (np.sqrt(v_db_corr) + self.epsilon)
         
         if self.weight_decay > 0:
-            w = w - self.weight_decay * w
+            w = w - lr * self.weight_decay * w
             #! bias decay?
-            b = b - self.weight_decay * b
+            b = b - lr * self.weight_decay * b
             
         return w, b
 
@@ -65,9 +65,9 @@ class SGD():
         b = b - self.lr * db
 
         if self.weight_decay > 0:
-            w = w - self.weight_decay * w
+            w = w - lr * self.weight_decay * w
             #! bias decay?
-            b = b - self.weight_decay * b
+            b = b - lr * self.weight_decay * b
             
         return w, b
 
@@ -157,17 +157,21 @@ if __name__ == '__main__':
     
     w = np.load(f'{root}/w.npy')[:2 * Y]
     b = np.load(f'{root}/b.npy')[:2 * Y]
+
+    trn_folder = 'files/trn/shuffled/10_minutes/10_samples'
+    val_folder = 'files/val/shuffled/whole_file'
+    tst_folder = 'files/tst'
     
-    y_true_trn = load(f'{root}/y_trn.pickle')
-    features_trn = load(f'{root}/features_trn.pickle')
+    y_true_trn = load(f'{trn_folder}/y.pickle')
+    features_trn = load(f'{trn_folder}/features.pickle')
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
-    y_true_val = load(f'{root}/y_val.pickle')
-    features_val = load(f'{root}/features_val.pickle')
+    y_true_val = load(f'{val_folder}/y.pickle')
+    features_val = load(f'{val_folder}/features.pickle')
     y_true_val, features_val = filter_data(y_true_val, features_val)
     
-    y_true_tst = load(f'{root}/y_tst.pickle')
-    features_tst = load(f'{root}/features_tst.pickle')
+    y_true_tst = load(f'{tst_folder}/y.pickle')
+    features_tst = load(f'{tst_folder}/features.pickle')
 
     set_seed(seed)
     
@@ -188,11 +192,25 @@ if __name__ == '__main__':
         'optim_name': optim_name,
         'n_trn_samples': len(y_true_trn),
         'n_val_samples': len(y_true_val),
-        'sample_duration': 20,
+        'trn_folder': trn_folder,
+        'val_folder': val_folder,
+        'tst_folder': tst_folder,
         'normalization_in_loss': True
     })
 
     os.makedirs(f'outputs/{run_name}')
+
+    loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
+    loss_val, rvce_val = inference(features_val, y_true_val, w, b)
+
+    wandb.log({
+        'initial tst loss': loss_tst,
+        'initial tst rvce': rvce_tst,
+        'initial val loss': loss_val,
+        'initial val rvce': rvce_val
+
+    })
+
     
     for i in range(epochs):                
         rvces_trn = []
