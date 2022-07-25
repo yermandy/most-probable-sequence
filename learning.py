@@ -22,8 +22,9 @@ class AdamW():
     def step(self, t, w, b, dw, db):
         if self.weight_decay > 0:
             dw = dw + self.weight_decay * w
-            #! bias decay?
-            db = db + self.weight_decay * b
+
+            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
+            # db = db + self.weight_decay * b
         
         # Update biased first moment estimate
         self.m_dw = self.beta1 * self.m_dw + (1 - self.beta1) * dw
@@ -47,8 +48,9 @@ class AdamW():
         
         if self.weight_decay > 0:
             w = w - lr * self.weight_decay * w
-            #! bias decay?
-            b = b - lr * self.weight_decay * b
+
+            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
+            # b = b - lr * self.weight_decay * b
             
         return w, b
 
@@ -66,8 +68,9 @@ class SGD():
 
         if self.weight_decay > 0:
             w = w - lr * self.weight_decay * w
-            #! bias decay?
-            b = b - lr * self.weight_decay * b
+            
+            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
+            # b = b - lr * self.weight_decay * b
             
         return w, b
 
