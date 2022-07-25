@@ -90,9 +90,9 @@ Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x
 
 $$
 \begin{align}
-g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (\llbracket \hat{y}_i + \hat{y}_{i+1} = z \rrbracket - \llbracket \bar{y}_i + \bar{y}_{i+1} = z \rrbracket)} \\
-g_b(z) &= \sum_{i=1}^{n-1} {(\llbracket \hat{y}_i + \hat{y}_{i+1} = z \rrbracket - \llbracket \bar{y}_i + \bar{y}_{i+1} = z \rrbracket)}
+g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (\llbracket \hat y_i + \hat y_{i+1} = z \rrbracket - \llbracket \bar y_i + \bar y_{i+1} = z \rrbracket)} \\
+g_b(z) &= \sum_{i=1}^{n-1} {(\llbracket \hat y_i + \hat y_{i+1} = z \rrbracket - \llbracket \bar y_i + \bar y_{i+1} = z \rrbracket)}
 \end{align}
 $$
 
-where $\phi(x)$ are features, $\hat{y}_i$ are predicted and $\bar{y}_i$ are the ground truth labels for $i$-th window.
+where $\phi(x)$ are features, $\hat y_i$ are predicted and $\bar y_i$ are the ground truth labels for $i$-th window.
