@@ -1,4 +1,6 @@
 import numpy as np
+from tabulate import tabulate
+
 
 def generate_random(seed=42):
     np.random.seed(seed)
@@ -51,3 +53,10 @@ def generate_random_from_params():
                 f[i, j, k] = outputs[j + k]
     
     return f
+
+
+def print_dict_as_table(dictionary: dict):
+    table = [] 
+    for k, v in dictionary.items():
+        table.append([k, v])
+    print(tabulate(table))
