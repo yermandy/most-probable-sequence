@@ -89,7 +89,7 @@ $$
 Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x, \bar y)$
 
 $$
-    y_1^*,\dots,y_n^* = \mathop{\text{arg max}}\limits_{y_1,...,y_n} {\Big[ \frac{1}{\bar{c}} |\sum_{i=1}^n {y_i - \bar{c}}| + \sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1})  \Big]}
+y_1^*, \dots, y_n^* = \mathop{\text{arg max}}\limits_{y_1,...,y_n} {\Big[ \frac{1}{\bar{c}} |\sum_{i=1}^n {y_i - \bar{c}}| + \sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1})  \Big]}
 $$
 
 $$
