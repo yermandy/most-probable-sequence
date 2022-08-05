@@ -12,5 +12,6 @@ parser.add_argument('--Y', type=int, default=6, help='Y - number of events in sm
 parser.add_argument('--validation', type=bool, action=argparse.BooleanOptionalAction, default=True, help='use validation set')
 parser.add_argument('--testing', type=bool, action=argparse.BooleanOptionalAction, default=False, help='use testing set')
 parser.add_argument('--optim', type=str, default='SGD', help='optimizer to use', choices=['AdamW', 'SGD'])
+parser.add_argument('--biases_only', type=bool, action=argparse.BooleanOptionalAction, default=False, help='learn only biases')
 
 args = parser.parse_args()
