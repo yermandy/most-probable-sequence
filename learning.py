@@ -179,10 +179,10 @@ if __name__ == '__main__':
             
                 f = calc_f(features_i, w, b)
             
-                loss, y_star = evaluate_loss(f, y_true_i)
+                loss, y_tilde = evaluate_loss(f, y_true_i)
                 loss_trn.append(loss)
                 
-                dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_star)
+                dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_tilde)
 
                 dw.append(dw_i)
                 db.append(db_i)
