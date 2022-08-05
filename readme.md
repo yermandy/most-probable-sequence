@@ -89,13 +89,17 @@ $$
 Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x, \bar y)$
 
 $$
+    y_1^*,\dots,y_n^* = \mathop{\text{arg max}}\limits_{y_1,...,y_n} {\Big[ \frac{1}{\bar{c}} |\sum_{i=1}^n {y_i - \bar{c}}| + \sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1})  \Big]}
+$$
+
+$$
 \begin{align}
-g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ \hat y_i + \hat y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)} \\
-g_b(z) &= \sum_{i=1}^{n-1} {(⟦ \hat y_i + \hat y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)}
+g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ y_i^* + y_{i+1}^* = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)} \\
+g_b(z) &= \sum_{i=1}^{n-1} {(⟦ y_i^* + y_{i+1}^* = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)}
 \end{align}
 $$
 
-where $\phi(x)$ are features, $\hat y_i$ are predicted and $\bar y_i$ are the ground truth labels for $i$-th window.
+where $\phi(x)$ are features and $\bar y_i$ are the ground truth labels for $i$-th window.
 
 #### Normalization
 
