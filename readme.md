@@ -89,13 +89,13 @@ $$
 Calculate the sub-gradients of the margin rescaling loss $\Delta (\theta, \bar x, \bar y)$
 
 $$
-y_1^*, \dots, y_n^* = \mathop{\text{arg max}}\limits_{y_1,...,y_n} {\Big[ \frac{1}{\bar{c}} |\sum_{i=1}^n {y_i - \bar{c}}| + \sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1})  \Big]}
+    \tilde y_1,\dots, \tilde y_n = \mathop{\text{arg max}}\limits_{y_1,...,y_n} {\Big[ \frac{1}{\bar{c}} |\sum_{i=1}^n {y_i - \bar{c}}| + \sum_{i=1}^{n-1} f_{i}(y_i,y_{i+1})  \Big]}
 $$
 
 $$
 \begin{align}
-g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ y_i^* + y_{i+1}^* = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)} \\
-g_b(z) &= \sum_{i=1}^{n-1} {(⟦ y_i^* + y_{i+1}^* = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)}
+g_w(z) &= \sum_{i=1}^{n-1} {\phi(x_{i,i+1}) (⟦ \tilde y_i + \tilde y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)} \\
+g_b(z) &= \sum_{i=1}^{n-1} {(⟦ \tilde y_i + \tilde y_{i+1} = z ⟧ - ⟦ \bar y_i + \bar y_{i+1} = z ⟧)}
 \end{align}
 $$
 
