@@ -68,10 +68,11 @@ def evaluate_loss(f, y_true):
     # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
     
-    objective, y_pred = backtrack(Is, F, c_best, Y)
+    objective, y_star = backtrack(Is, F, c_best, Y)
     # print('dp objective', objective)
     
-    return margin_rescaling_loss, y_pred
+    return margin_rescaling_loss, y_star
+    
 
 
 
@@ -110,12 +111,12 @@ def dymanic_programming(f: np.array, n: int, Y: int):
 
 
 @numba.jit(nopython=True)
-def calc_grads(features, w, b, y_true, y_pred):
+def calc_grads(features, w, b, y_true, y_star):
     w_grad = np.zeros_like(w)
     b_grad = np.zeros_like(b)
     
     for i, f in enumerate(features):
-        z_pred = y_pred[i] + y_pred[i + 1]
+        z_pred = y_star[i] + y_star[i + 1]
         z_true = y_true[i] + y_true[i + 1]
         
         w_grad[z_pred] += f

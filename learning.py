@@ -4,75 +4,8 @@ import wandb
 import os
 from arguments import args
 from most_probable_sequence import most_probable_sequence
-
-class AdamW():
-    def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, weight_decay=0):
-        # Initialize 1st moment vector
-        self.m_dw, self.m_db = 0, 0
-        # Initialize 2nd moment vector
-        self.v_dw, self.v_db = 0, 0
-        # Exponential decay rates for the moment estimates
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.epsilon = epsilon
-        self.lr = lr
-        self.weight_decay = weight_decay
-
-
-    def step(self, t, w, b, dw, db):
-        if self.weight_decay > 0:
-            dw = dw + self.weight_decay * w
-
-            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
-            # db = db + self.weight_decay * b
-        
-        # Update biased first moment estimate
-        self.m_dw = self.beta1 * self.m_dw + (1 - self.beta1) * dw
-        self.m_db = self.beta1 * self.m_db + (1 - self.beta1) * db
-
-        # Update biased second raw moment estimate
-        self.v_dw = self.beta2 * self.v_dw + (1 - self.beta2) * dw ** 2
-        self.v_db = self.beta2 * self.v_db + (1 - self.beta2) * db ** 2
-
-        # Compute bias-corrected first moment estimate
-        m_dw_corr = self.m_dw / (1 - self.beta1 ** t)
-        m_db_corr = self.m_db / (1 - self.beta1 ** t)
-
-        # Compute bias-corrected second raw moment estimate
-        v_dw_corr = self.v_dw / (1 - self.beta2 ** t)
-        v_db_corr = self.v_db / (1 - self.beta2 ** t)
-
-        # Update parameters
-        w = w - self.lr * m_dw_corr / (np.sqrt(v_dw_corr) + self.epsilon)
-        b = b - self.lr * m_db_corr / (np.sqrt(v_db_corr) + self.epsilon)
-        
-        if self.weight_decay > 0:
-            w = w - lr * self.weight_decay * w
-
-            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
-            # b = b - lr * self.weight_decay * b
-            
-        return w, b
-
-
-class SGD():
-    def __init__(self, lr=0.001, weight_decay=0):
-        self.lr = lr
-        self.weight_decay = weight_decay
-
-
-    def step(self, t, w, b, dw, db):
-        # Update parameters
-        w = w - self.lr * dw
-        b = b - self.lr * db
-
-        if self.weight_decay > 0:
-            w = w - lr * self.weight_decay * w
-
-            # According to "Deep Learning" by Goodfellow, biases should not be regularized, see p.230
-            # b = b - lr * self.weight_decay * b
-            
-        return w, b
+from utils import print_dict_as_table
+from optim import AdamW, SGD
 
 
 def batch(N, batch_size):
@@ -90,7 +23,7 @@ def inference(features, y_true, w, b, calculate_loss=False):
         f = calc_f(features_i, w, b)
     
         if calculate_loss:
-            loss, y_pred = evaluate_loss(f, y_true_i)
+            loss, _ = evaluate_loss(f, y_true_i)
             losses.append(loss)
 
         _, y_pred = most_probable_sequence(f)
@@ -152,7 +85,9 @@ def collect_folders(folders):
 
 
 if __name__ == '__main__':
-    # os.environ['WANDB_MODE'] = 'disabled'
+    os.environ['WANDB_MODE'] = 'disabled'
+
+    print_dict_as_table(vars(args))
 
     run = wandb.init(project="most-probable-sequence", entity="yermandy")
 
@@ -169,14 +104,18 @@ if __name__ == '__main__':
 
     run_name = wandb.run.name
     
-    root = 'files'
+    root = 'files/031_more_validation_samples'
+    split = args.split
     
-    w = np.load(f'{root}/w.npy')[:2 * Y]
-    b = np.load(f'{root}/b.npy')[:2 * Y]
+    w = np.load(f'{root}/params/split_{split}/w.npy')[:2 * Y]
+    b = np.load(f'{root}/params/split_{split}/b.npy')[:2 * Y]
 
-    trn_folder = ['files/trn/shuffled/5_minutes/10_samples', 'files/trn/shuffled/10_minutes/10_samples']
-    val_folder = 'files/val/shuffled/whole_file'
-    tst_folder = 'files/tst'
+    # trn_folder = ['files/trn/shuffled/5_minutes/10_samples', 'files/trn/shuffled/10_minutes/10_samples']
+    # trn_folder = [f'{root}/trn/split_{split}/shuffled/10_minutes/5_samples', f'{root}/trn/split_{split}/shuffled/whole_file']
+    
+    trn_folder = [f'{root}/trn/split_{split}/shuffled/whole_file']
+    val_folder = f'{root}/val/split_{split}/shuffled/whole_file'
+    tst_folder = f'{root}/tst/split_{split}/shuffled/whole_file'
     
     y_true_trn, features_trn = collect_folders(trn_folder)
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
@@ -210,7 +149,9 @@ if __name__ == '__main__':
         'trn_folder': trn_folder,
         'val_folder': val_folder,
         'tst_folder': tst_folder,
-        'normalization_in_loss': True
+        'normalization_in_loss': True,
+        'split': split,
+        'biases_only': args.biases_only
     })
 
     os.makedirs(f'outputs/{run_name}')
@@ -223,13 +164,10 @@ if __name__ == '__main__':
         'initial tst rvce': rvce_tst,
         'initial val loss': loss_val,
         'initial val rvce': rvce_val
-
     })
 
-    
-    for i in range(epochs):                
-        rvces_trn = []
-        losses_trn = []
+    for i in range(epochs):
+        loss_trn = []
 
         for indices in batch(len(features_trn), batch_size):
             dw = []
@@ -241,14 +179,10 @@ if __name__ == '__main__':
             
                 f = calc_f(features_i, w, b)
             
-                loss, y_pred = evaluate_loss(f, y_true_i)
-                losses_trn.append(loss)
+                loss, y_star = evaluate_loss(f, y_true_i)
+                loss_trn.append(loss)
                 
-                y_true_i_sum = y_true_i.sum()
-                rvce = abs(y_pred.sum() - y_true_i_sum) / y_true_i_sum
-                rvces_trn.append(rvce)
-                
-                dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_pred)
+                dw_i, db_i = calc_grads(features_i, w, b, y_true_i, y_star)
 
                 dw.append(dw_i)
                 db.append(db_i)
@@ -256,16 +190,19 @@ if __name__ == '__main__':
             dw = np.mean(dw, axis=0)
             db = np.mean(db, axis=0)
 
+            if args.biases_only:
+                dw = 0
+
             w, b = optim.step(i + 1, w, b, dw, db)
 
-        mean_rvce = np.mean(rvces_trn)
-        mean_loss = np.mean(losses_trn)
-
-        print(f'trn | i: {i} | loss: {mean_loss:.2f} | rvce: {mean_rvce:.2f}')
+        loss_trn = np.mean(loss_trn)
+        _, rvce_trn = inference(features_tst, y_true_tst, w, b)
+        
+        print(f'trn | i: {i} | loss: {loss_trn:.2f} | rvce: {rvce_trn:.2f}')
 
         log = {
-            'trn loss': mean_loss,
-            'trn rvce': mean_rvce,
+            'trn loss': loss_trn,
+            'trn rvce': rvce_trn,
             'weights': np.sum(w ** 2),
             'biases': np.sum(b ** 2)
         }
