@@ -1,4 +1,7 @@
 import numpy as np
+from tabulate import tabulate
+import pickle
+
 
 def generate_random(seed=42):
     np.random.seed(seed)
@@ -51,3 +54,28 @@ def generate_random_from_params():
                 f[i, j, k] = outputs[j + k]
     
     return f
+
+
+def print_dict_as_table(dictionary: dict):
+    table = [] 
+    for k, v in dictionary.items():
+        table.append([k, v])
+    print(tabulate(table))
+
+
+def load(name):
+    with open(name, 'rb') as f:
+        return pickle.load(f)
+
+    
+def collect_folders(folders):
+    folders = folders if type(folders) is list else [folders]
+
+    features = []
+    y = []
+
+    for folder in folders:
+        y.extend(load(f'{folder}/y.pickle'))
+        features.extend(load(f'{folder}/features.pickle'))
+
+    return y, features
