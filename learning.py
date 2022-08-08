@@ -1,10 +1,9 @@
 from dp import *
-import pickle
 import wandb
 import os
 from arguments import args
 from most_probable_sequence import most_probable_sequence
-from utils import print_dict_as_table
+from utils import *
 from optim import AdamW, SGD
 
 
@@ -37,11 +36,6 @@ def inference(features, y_true, w, b, calculate_loss=False):
     return mean_loss, mean_rvce
 
 
-def load(name):
-    with open(name, 'rb') as f:
-        return pickle.load(f)
-
-
 def load_params(run_name):
     w = np.load(f'outputs/{run_name}/w.npy')
     b = np.load(f'outputs/{run_name}/b.npy')
@@ -71,21 +65,8 @@ def filter_data(y, features):
     return y_filtered, features_filtered
 
 
-def collect_folders(folders):
-    folders = folders if type(folders) is list else [folders]
-
-    features = []
-    y = []
-
-    for folder in folders:
-        y.extend(load(f'{folder}/y.pickle'))
-        features.extend(load(f'{folder}/features.pickle'))
-
-    return y, features
-
-
 if __name__ == '__main__':
-    os.environ['WANDB_MODE'] = 'disabled'
+    # os.environ['WANDB_MODE'] = 'disabled'
 
     print_dict_as_table(vars(args))
 
@@ -120,12 +101,10 @@ if __name__ == '__main__':
     y_true_trn, features_trn = collect_folders(trn_folder)
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
-    y_true_val = load(f'{val_folder}/y.pickle')
-    features_val = load(f'{val_folder}/features.pickle')
+    y_true_val, features_val = collect_folders(val_folder)
     y_true_val, features_val = filter_data(y_true_val, features_val)
     
-    y_true_tst = load(f'{tst_folder}/y.pickle')
-    features_tst = load(f'{tst_folder}/features.pickle')
+    y_true_tst, features_tst = collect_folders(tst_folder)
 
     set_seed(seed)
     
