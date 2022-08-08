@@ -91,12 +91,14 @@ def dymanic_programming(f: np.array, n: int, Y: int):
     C = Y
     for k in range(3, n + 2):
         C += Y - 1
+        # assert C == (Y - 1) * (k - 1) + 1
         F = np.zeros((C, Y))
         I = np.full((C, Y), -1, dtype=np.int64)
         for c in range(0, C):
             for y_k in range(0, Y):
                 V = -np.inf
                 lb = max(0, c - C + Y)
+                # assert c - C + Y == c - (Y - 1) * (k - 2)
                 for y_k_1 in range(lb, min(Y, c + 1)):
                     V_new = F_prev[c - y_k_1, y_k_1] + f[k - 2, y_k_1, y_k]
                     if V_new > V:
