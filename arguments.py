@@ -13,5 +13,6 @@ parser.add_argument('--validation', type=bool, action=argparse.BooleanOptionalAc
 parser.add_argument('--testing', type=bool, action=argparse.BooleanOptionalAction, default=False, help='use testing set')
 parser.add_argument('--optim', type=str, default='SGD', help='optimizer to use', choices=['AdamW', 'SGD'])
 parser.add_argument('--biases_only', type=bool, action=argparse.BooleanOptionalAction, default=False, help='learn only biases')
+parser.add_argument('--cross_validation_fold', type=int, default=-1, help='Use cross validation')
 
 args = parser.parse_args()

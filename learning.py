@@ -46,13 +46,13 @@ def set_seed(seed):
     np.random.seed(seed)
 
 
-def get_optim(optim_name, lr, weight_decay):
-    if optim_name == 'AdamW':
+def get_optim(optim, lr, weight_decay):
+    if optim == 'AdamW':
         return AdamW(lr=lr, weight_decay=weight_decay)
-    elif optim_name == 'SGD':
+    elif optim == 'SGD':
         return SGD(lr=lr, weight_decay=weight_decay)
     else:
-        raise ValueError(f'Unknown optimizer {optim_name}')
+        raise ValueError(f'Unknown optimizer {optim}')
 
 
 def filter_data(y, features):
@@ -66,30 +66,18 @@ def filter_data(y, features):
 
 
 if __name__ == '__main__':
-    # os.environ['WANDB_MODE'] = 'disabled'
+    os.environ['WANDB_MODE'] = 'disabled'
 
     print_dict_as_table(vars(args))
 
     run = wandb.init(project="most-probable-sequence", entity="yermandy")
-
-    batch_size = args.batch_size
-    epochs = args.epochs
-    lr = args.lr
-    weight_decay = args.weight_decay
-    Y = args.Y
-    seed = args.seed
-    optim_name = args.optim
-
-    validation = args.validation
-    testing = args.testing
-
     run_name = wandb.run.name
     
     root = 'files/031_more_validation_samples'
     split = args.split
     
-    w = np.load(f'{root}/params/split_{split}/w.npy')[:2 * Y]
-    b = np.load(f'{root}/params/split_{split}/b.npy')[:2 * Y]
+    w = np.load(f'{root}/params/split_{split}/w.npy')[:2 * args.Y]
+    b = np.load(f'{root}/params/split_{split}/b.npy')[:2 * args.Y]
 
     # trn_folder = ['files/trn/shuffled/5_minutes/10_samples', 'files/trn/shuffled/10_minutes/10_samples']
     # trn_folder = [f'{root}/trn/split_{split}/shuffled/10_minutes/5_samples', f'{root}/trn/split_{split}/shuffled/whole_file']
@@ -106,31 +94,39 @@ if __name__ == '__main__':
     
     y_true_tst, features_tst = collect_folders(tst_folder)
 
-    set_seed(seed)
+    set_seed(args.seed)
+
+    if args.cross_validation_fold >= 0:
+        y_true_all = y_true_trn + y_true_val
+        features_all = features_trn + features_val
+
+        from sklearn.model_selection import KFold
+        folds = KFold(n_splits=5, random_state=args.seed, shuffle=True).split(features_all)
+
+        trn_indices, val_indices = list(folds)[args.cross_validation_fold]
+        
+        y_true_val = [y_true_all[i] for i in val_indices]
+        features_val = [features_all[i] for i in val_indices]
+
+        y_true_trn = [y_true_all[i] for i in trn_indices]
+        features_trn = [features_all[i] for i in trn_indices]
+
+        del y_true_all, features_all
     
-    optim = get_optim(optim_name, lr, weight_decay)
+    optim = get_optim(args.optim, args.lr, args.weight_decay)
 
     loss_val_best = np.inf
     rvce_val_best = np.inf
 
+    wandb.config.update(vars(args))
     wandb.config.update({
-        'lr': lr,
-        'epochs': epochs,
-        'batch_size': batch_size,
-        'weight_decay': weight_decay,
-        'Y': Y,
-        'validation': validation,
-        'testing': testing,
-        'seed': seed,
-        'optim_name': optim_name,
         'n_trn_samples': len(y_true_trn),
         'n_val_samples': len(y_true_val),
+        'n_tst_samples': len(y_true_tst),
         'trn_folder': trn_folder,
         'val_folder': val_folder,
         'tst_folder': tst_folder,
-        'normalization_in_loss': True,
-        'split': split,
-        'biases_only': args.biases_only
+        'normalization_in_loss': True
     })
 
     os.makedirs(f'outputs/{run_name}')
@@ -145,10 +141,10 @@ if __name__ == '__main__':
         'initial val rvce': rvce_val
     })
 
-    for i in range(epochs):
+    for i in range(args.epochs):
         loss_trn = []
 
-        for indices in batch(len(features_trn), batch_size):
+        for indices in batch(len(features_trn), args.batch_size):
             dw = []
             db = []
 
@@ -186,7 +182,7 @@ if __name__ == '__main__':
             'biases': np.sum(b ** 2)
         }
 
-        if validation:
+        if args.validation:
 
             loss_val, rvce_val = inference(features_val, y_true_val, w, b)
 
@@ -206,7 +202,7 @@ if __name__ == '__main__':
 
             print(f'val | i: {i} | loss: {loss_val:.2f} | rvce: {rvce_val:.2f}')
 
-        if testing:
+        if args.testing:
 
             loss_tst, rvce_tst = inference(features_tst, y_true_tst, w, b)
             
