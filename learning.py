@@ -5,6 +5,8 @@ from arguments import args
 from most_probable_sequence import most_probable_sequence
 from utils import *
 from optim import AdamW, SGD
+from rich import print
+from tqdm.rich import tqdm
 
 
 def batch(N, batch_size):
@@ -68,7 +70,7 @@ def filter_data(y, features):
 if __name__ == '__main__':
     os.environ['WANDB_MODE'] = 'disabled'
 
-    print_dict_as_table(vars(args))
+    print(args)
 
     run = wandb.init(project="most-probable-sequence", entity="yermandy")
     run_name = wandb.run.name
@@ -118,7 +120,7 @@ if __name__ == '__main__':
     loss_val_best = np.inf
     rvce_val_best = np.inf
 
-    wandb.config.update(vars(args))
+    wandb.config.update(args)
     wandb.config.update({
         'n_trn_samples': len(y_true_trn),
         'n_val_samples': len(y_true_val),
@@ -141,7 +143,7 @@ if __name__ == '__main__':
         'initial val rvce': rvce_val
     })
 
-    for i in range(args.epochs):
+    for i in tqdm(range(args.epochs)):
         loss_trn = []
 
         for indices in batch(len(features_trn), args.batch_size):
@@ -171,7 +173,7 @@ if __name__ == '__main__':
             w, b = optim.step(i + 1, w, b, dw, db)
 
         loss_trn = np.mean(loss_trn)
-        _, rvce_trn = inference(features_tst, y_true_tst, w, b)
+        _, rvce_trn = inference(features_trn, y_true_trn, w, b)
         
         print(f'trn | i: {i} | loss: {loss_trn:.2f} | rvce: {rvce_trn:.2f}')
 
