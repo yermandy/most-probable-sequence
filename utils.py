@@ -71,11 +71,13 @@ def load(name):
 def collect_folders(folders):
     folders = folders if type(folders) is list else [folders]
 
-    features = []
-    y = []
+    X = []
+    Y = []
 
     for folder in folders:
-        y.extend(load(f'{folder}/y.pickle'))
-        features.extend(load(f'{folder}/features.pickle'))
+        Y.extend(load(f'{folder}/y.pickle'))
+        X.extend(load(f'{folder}/features.pickle'))
 
-    return y, features
+    X = [x.astype(np.float64) for x in X]
+
+    return Y, X
