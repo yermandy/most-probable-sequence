@@ -4,7 +4,7 @@ from collections import defaultdict
 from most_probable_sequence import most_probable_sequence
 
 
-def load_weights(run_name):
+def load_weights(run_name, weights_root):
     if run_name != None:
         w = np.load(f'outputs/{run_name}/w.npy')
         b = np.load(f'outputs/{run_name}/b.npy')
@@ -14,8 +14,8 @@ def load_weights(run_name):
     return w, b
 
 
-def evaluate_map(d=defaultdict(list)):
-    w, b = load_weights(None)
+def evaluate_map(features, y_true, weights_root, d=defaultdict(list)):
+    w, b = load_weights(None, weights_root)
 
     rvces = []
 
@@ -41,8 +41,8 @@ def evaluate_map(d=defaultdict(list)):
     return rvces
 
 
-def evaluate(run_name=None, d=defaultdict(list)):
-    w, b = load_weights(run_name)
+def evaluate(features, y_true, weights_root,  run_name=None, d=defaultdict(list), predictions=defaultdict(list)):
+    w, b = load_weights(run_name, weights_root)
     
     Y = 6
     w = w[:2 * Y]
@@ -51,13 +51,14 @@ def evaluate(run_name=None, d=defaultdict(list)):
     losses = []
     rvces = []
 
-    for features_i, y_true_i in zip(features, y_true):
+    for i, (features_i, y_true_i) in enumerate(zip(features, y_true)):
 
         f = calc_f(features_i, w, b)
                     
         # loss, y_pred = evaluate_loss(f, y_true_i)
         length, y_pred = most_probable_sequence(f)
         # losses.append(loss)
+        predictions[i].append(y_pred)
 
         rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
         rvces.append(rvce)
@@ -106,10 +107,12 @@ def plot(d, d_map):
     axes[1].plot(distribution, 'o-')
     
     plt.tight_layout()
-    plt.savefig('outputs/true_vs_pred_class.png')
+    # plt.savefig('outputs/old_true_vs_pred_class.png')
 
 
 if __name__ == '__main__':
+
+    ''' old
     runs = [
         'divine-darkness-365', # split_0
         'elated-lake-399', # split_1
@@ -117,32 +120,110 @@ if __name__ == '__main__':
         'fresh-durian-435', # split_3
         'peach-armadillo-462' # split_4
     ]
+    # ''' 
+
+    ''' 031_RX100_resized_128_sr_22050
+    # trained on:
+    # - files/031_RX100_resized_128_sr_22050/trn/split_*/shuffled/whole_file
+    runs = [
+        'solar-wind-634', # split_0
+        'floral-gorge-654', # split_1
+        'restful-glitter-698', # split_2
+        'noble-firefly-711', # split_3
+        'leafy-music-763' # split_4
+    ]
+    # ''' 
+
+    ''' 035_RX100_resized_128_audio_image_augmentation_bs_256
+    runs = [
+        'glad-terrain-496', # split_0
+        'noble-waterfall-518', # split_1
+        'sage-dragon-541', # split_2
+        'eternal-cloud-563', # split_3
+        'dry-wildflower-574' # split_4
+    ]
+    # ''' 
+
+    ''' 031_RX100_resized_128_sr_22050
+    # trained on:
+    # - "files/031_RX100_resized_128_sr_22050/trn/split_*/shuffled/10_minutes/5_samples"
+    # - "files/031_RX100_resized_128_sr_22050/trn/split_*/shuffled/whole_file"
+    runs = [
+        'honest-paper-1025',
+        'frosty-moon-1035',
+        'magic-silence-1076',
+        'graceful-eon-1089',
+        'laced-elevator-1111'
+    ]
+    # '''
+
+    ''' 031_RX100_resized_128_sr_22050
+    # trained on:
+    # - "files/031_RX100_resized_128_sr_22050/trn/split_*/shuffled/10_minutes/5_samples"
+    runs = [
+        'silver-disco-893',
+        'gentle-surf-922',
+        'ruby-jazz-944',
+        'resilient-wind-963',
+        'twilight-waterfall-1008'
+    ]
+    # '''
+
+    ''' 031_RX100_resized_128_sr_22050
+    # 031_RX100_resized_128_sr_22050
+    # trained on:
+    # - "files/031_more_validation_samples/trn/split_4/shuffled/whole_file"
+    runs = [
+        'different-sunset-1159',
+        'swift-tree-1198',
+        'likely-sky-1224',
+        'sage-glitter-1231',
+        'young-sea-1259'
+    ]
+    # '''
+
+    ''' 031_more_validation_samples
+    # trained on:
+    # - "files/031_more_validation_samples/trn/split_4/shuffled/whole_file"
+    runs = [
+        'vital-wood-1302',
+        'treasured-bird-1305',
+        'genial-grass-1313',
+        'still-voice-1315',
+        'astral-deluge-1322'
+    ]
+    # '''
 
     d_map = defaultdict(list)
     d = defaultdict(list)
 
+    tst_files_root = 'files/031_RX100_resized_128_sr_22050'
+
     rvces = []
     rvces_map = []
-    for i, run_name in enumerate(runs):
+    for split, run_name in enumerate(runs):
 
-        with open(f'files/tst/split_{i}/y.pickle', 'rb') as f:
+        print('-' * 10)
+        print(f'Split {split}')
+
+        with open(f'{tst_files_root}/tst/split_{split}/shuffled/whole_file/y.pickle', 'rb') as f:
             y_true = pickle.load(f)
         
-        with open(f'files/tst/split_{i}/features.pickle', 'rb') as f:
+        with open(f'{tst_files_root}/tst/split_{split}/shuffled/whole_file/features.pickle', 'rb') as f:
             features = pickle.load(f)
 
-        weights_root = f'files/split_{i}'
+        weights_root = f'{tst_files_root}/params/split_{split}'
 
         # evaluate using MAP inference
-        rvces_run_map = evaluate_map(d_map)
+        rvces_run_map = evaluate_map(features, y_true, weights_root, d_map)
         
         rvces_map.extend(rvces_run_map)
 
         # evaluate using most probable sequence (not trained)
-        evaluate()
+        evaluate(features, y_true, weights_root)
 
         # evaluate using most probable sequence (trained)
-        rvces_run = evaluate(run_name, d)
+        rvces_run = evaluate(features, y_true, weights_root, run_name, d)
         
         rvces.extend(rvces_run)
     
