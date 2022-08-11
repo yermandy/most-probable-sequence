@@ -135,18 +135,17 @@ def calc_grads(features, w, b, y_true, y_tilde):
     return w_grad, b_grad
 
 
-@numba.jit(nopython=True)
 def calc_f(features, w, b):
     n = len(features)
     Y = len(w) // 2
     
     f = np.zeros((n, Y, Y))
+    scores = features @ w.T + b.reshape(1, -1)
+    
     for i in range(n):
-        scores = w @ features[i] + b
-
         for j in range(Y):
             for k in range(Y):
-                f[i, j, k] = scores[j + k]
+                f[i, j, k] = scores[i, j + k]
     return f
 
 
@@ -156,15 +155,15 @@ if __name__ == '__main__':
     f, y = generate_random()
     
     n = f.shape[0]
-    Y = f.shape[1]
+    Y_trn = f.shape[1]
     
-    C_max = (Y - 1) * n
+    C_max = (Y_trn - 1) * n
 
-    F, Is = dymanic_programming(f, n, Y)
+    F, Is = dymanic_programming(f, n, Y_trn)
         
     print('DP')
     for c in range(0, C_max + 1):
-        objective, maximizers = backtrack(Is, F, c, Y)
+        objective, maximizers = backtrack(Is, F, c, Y_trn)
         print(c, objective, maximizers)
         
         # ? assert that DP objective calculated correctly
