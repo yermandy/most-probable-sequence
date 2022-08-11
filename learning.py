@@ -88,13 +88,13 @@ if __name__ == '__main__':
     val_folder = f'{root}/val/split_{split}/shuffled/whole_file'
     tst_folder = f'{root}/tst/split_{split}/shuffled/whole_file'
     
-    y_true_trn, features_trn = collect_folders(trn_folder)
+    y_true_trn, features_trn = get_data(trn_folder)
     y_true_trn, features_trn = filter_data(y_true_trn, features_trn)
 
-    y_true_val, features_val = collect_folders(val_folder)
+    y_true_val, features_val = get_data(val_folder)
     y_true_val, features_val = filter_data(y_true_val, features_val)
     
-    y_true_tst, features_tst = collect_folders(tst_folder)
+    y_true_tst, features_tst = get_data(tst_folder)
 
     set_seed(args.seed)
 
