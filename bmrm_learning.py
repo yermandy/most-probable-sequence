@@ -22,7 +22,7 @@ class MarginRescallingLoss:
         dw = []
         db = []
 
-        w, b = self.get_w_b(W)
+        w, b = self.get_params(W)
         
         for x, y in zip(self.X, self.Y):
             f = calc_f(x, w, b)
@@ -47,11 +47,58 @@ class MarginRescallingLoss:
 
         return L, dW
 
-    def get_w_b(self, W):
+
+    def get_trainable_params_count(self):
+        return np.prod(self.wb_shape)
+
+
+    def get_params(self, W):
         wb = W.reshape(self.wb_shape)
         w, b = wb[:, :-1], wb[:, -1]
         return w, b
 
+
+class MarginRescallingLossBiasesOnly:
+    def __init__(self, w, b_shape, X, Y, logger=None):
+        self.w = w
+        self.b_shape = b_shape
+        self.X = X
+        self.Y = Y
+        self.logger = logger
+        
+    def __call__(self, W):
+        L = []
+        db = []
+        b = W
+        
+        for x, y in zip(self.X, self.Y):
+            f = calc_f(x, self.w, b)
+                
+            loss, y_tilde = evaluate_loss(f, y)
+            _, db_i = calc_grads(x, self.w, b, y, y_tilde)
+
+            L.append(loss)
+            db.append(db_i)
+
+        L = np.mean(L)
+        db = np.mean(db, axis=0)
+
+        self.logger.log({
+            'trn loss': L
+        })
+
+        dW = db
+
+        return L, dW
+
+
+    def get_trainable_params_count(self):
+        return np.prod(self.b_shape)
+
+
+    def get_params(self, W):
+        b = W
+        return self.w, b
 
 
 if __name__ == '__main__':
@@ -119,11 +166,14 @@ if __name__ == '__main__':
         'initial val rvce': rvce_val
     })
 
-    loss = MarginRescallingLoss(w.shape, b.shape, X_trn, Y_trn, wandb)
+    if args.biases_only:
+        loss = MarginRescallingLossBiasesOnly(w, b.shape, X_trn, Y_trn, wandb)    
+    else:
+        loss = MarginRescallingLoss(w.shape, b.shape, X_trn, Y_trn, wandb)
 
-    W, stats = bmrm(loss, w.size + b.size, lmbda=args.reg, tol_rel=args.tol_rel)
+    W, stats = bmrm(loss, loss.get_trainable_params_count(), lmbda=args.reg, tol_rel=args.tol_rel)
     
-    w, b = loss.get_w_b(W)
+    w, b = loss.get_params(W)
 
     loss_tst, rvce_tst = inference(X_tst, Y_tst, w, b, calculate_loss=True)
     loss_val, rvce_val = inference(X_val, Y_val, w, b, calculate_loss=True)
