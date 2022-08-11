@@ -16,5 +16,7 @@ parser.add_argument('--biases_only', type=bool, action=argparse.BooleanOptionalA
 parser.add_argument('--cross_validation_fold', type=int, default=-1, help='Use cross validation')
 parser.add_argument('--reg', type=float, default=1, help='regularization for bmrm')
 parser.add_argument('--tol_rel', type=float, default=.01, help='relative tolerance for bmrm (percents)')
+parser.add_argument('--combine_trn_and_val', type=bool, action=argparse.BooleanOptionalAction, default=False, help='combine training and validation sets')
+parser.add_argument('--normalize_X', type=bool, action=argparse.BooleanOptionalAction, default=False, help='normalize samples from X to unit length')
 
 args = parser.parse_args()
