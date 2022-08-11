@@ -68,7 +68,7 @@ def load(name):
         return pickle.load(f)
 
     
-def collect_folders(folders):
+def get_data(folders, normalize_X=False):
     folders = folders if type(folders) is list else [folders]
 
     X = []
@@ -76,7 +76,11 @@ def collect_folders(folders):
 
     for folder in folders:
         Y.extend(load(f'{folder}/y.pickle'))
-        X.extend(load(f'{folder}/features.pickle'))
+
+        for x in load(f'{folder}/features.pickle'):
+            x = x.astype(np.float64)
+            x = x / np.linalg.norm(x, axis=1, keepdims=True) if normalize_X else x
+            X.append(x)
 
     X = [x.astype(np.float64) for x in X]
 
