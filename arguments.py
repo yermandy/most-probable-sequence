@@ -18,5 +18,6 @@ parser.add_argument('--reg', type=float, default=1, help='regularization for bmr
 parser.add_argument('--tol_rel', type=float, default=.01, help='relative tolerance for bmrm (percents)')
 parser.add_argument('--combine_trn_and_val', type=bool, action=argparse.BooleanOptionalAction, default=False, help='combine training and validation sets')
 parser.add_argument('--normalize_X', type=bool, action=argparse.BooleanOptionalAction, default=False, help='normalize samples from X to unit length')
+parser.add_argument('--root', type=str, default='files/031_more_validation_samples', help='root with files')
 
 args = parser.parse_args()
