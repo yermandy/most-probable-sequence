@@ -111,18 +111,9 @@ if __name__ == '__main__':
     run = wandb.init(project="audio-bmrm", entity="yermandy")
     run_name = wandb.run.name
     
-    root = 'files/031_more_validation_samples'
-    split = args.split
-    
-    # w = np.load(f'{root}/params/split_{split}/w.npy')[:2 * args.Y]
-    # b = np.load(f'{root}/params/split_{split}/b.npy')[:2 * args.Y]
-
-    # trn_folder = ['files/trn/shuffled/5_minutes/10_samples', 'files/trn/shuffled/10_minutes/10_samples']
-    # trn_folder = [f'{root}/trn/split_{split}/shuffled/10_minutes/5_samples', f'{root}/trn/split_{split}/shuffled/whole_file']
-    
-    trn_folder = [f'{root}/trn/split_{split}/shuffled/whole_file']
-    val_folder = f'{root}/val/split_{split}/shuffled/whole_file'
-    tst_folder = f'{root}/tst/split_{split}/shuffled/whole_file'
+    trn_folder = f'{args.root}/trn/split_{args.split}/shuffled/whole_file'
+    val_folder = f'{args.root}/val/split_{args.split}/shuffled/whole_file'
+    tst_folder = f'{args.root}/tst/split_{args.split}/shuffled/whole_file'
     
     Y_trn, X_trn = get_data(trn_folder, normalize_X=args.normalize_X)
     Y_trn, X_trn = filter_data(Y_trn, X_trn)
@@ -153,8 +144,8 @@ if __name__ == '__main__':
 
     os.makedirs(f'outputs/{run_name}')
 
-    w = np.load(f'{root}/params/split_{split}/w.npy')[:2 * args.Y]
-    b = np.load(f'{root}/params/split_{split}/b.npy')[:2 * args.Y]
+    w = np.load(f'{args.root}/params/split_{args.split}/w.npy')[:2 * args.Y]
+    b = np.load(f'{args.root}/params/split_{args.split}/b.npy')[:2 * args.Y]
 
     loss_tst, rvce_tst = inference(X_tst, Y_tst, w, b, calculate_loss=True)
     loss_val, rvce_val = inference(X_val, Y_val, w, b, calculate_loss=True)
