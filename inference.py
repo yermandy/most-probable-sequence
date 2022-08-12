@@ -2,6 +2,8 @@ from dp import *
 import pickle
 from collections import defaultdict
 from most_probable_sequence import most_probable_sequence
+from utils import get_data
+from rich import print
 
 
 def load_weights(run_name, weights_root):
@@ -35,7 +37,7 @@ def evaluate_map(features, y_true, weights_root, d=defaultdict(list)):
             d[t].append(p)
 
     print('MAP')
-    print(f'RVCE: {np.mean(rvces)} : {np.std(rvces)}')
+    print(f'{np.mean(rvces):.3f} ± {np.std(rvces):.3f}')
     print()
     
     return rvces
@@ -55,9 +57,7 @@ def evaluate(features, y_true, weights_root,  run_name=None, d=defaultdict(list)
 
         f = calc_f(features_i, w, b)
                     
-        # loss, y_pred = evaluate_loss(f, y_true_i)
         length, y_pred = most_probable_sequence(f)
-        # losses.append(loss)
         predictions[i].append(y_pred)
 
         rvce = abs(y_pred.sum() - y_true_i.sum()) / y_true_i.sum()
@@ -71,8 +71,7 @@ def evaluate(features, y_true, weights_root,  run_name=None, d=defaultdict(list)
 
     print('Structured')
     print(run_name if run_name != None else 'initial')
-    # print(f'Loss: {np.mean(losses)} : {np.std(losses)}')
-    print(f'RVCE: {np.mean(rvces)} : {np.std(rvces)}')
+    print(f'{np.mean(rvces):.3f} ± {np.std(rvces):.3f}')
     print()
     return rvces
 
@@ -107,12 +106,14 @@ def plot(d, d_map):
     axes[1].plot(distribution, 'o-')
     
     plt.tight_layout()
-    # plt.savefig('outputs/old_true_vs_pred_class.png')
+    plt.savefig('outputs/bmrm_true_vs_pred_class.png')
 
 
 if __name__ == '__main__':
 
-    ''' old
+    normalize_X = False
+
+    # ''' old
     runs = [
         'divine-darkness-365', # split_0
         'elated-lake-399', # split_1
@@ -194,6 +195,37 @@ if __name__ == '__main__':
     ]
     # '''
 
+    ''' BMRM
+    runs = [
+        'dauntless-microwave-39',
+        'fallen-breeze-39',
+        'driven-eon-41',
+        'leafy-sun-43',
+        'vocal-dew-41'
+    ]
+    # '''
+
+    ''' BMRM with normalized X
+    runs = [
+        'devout-waterfall-84',
+        'kind-rain-88',
+        'laced-sun-86',
+        'serene-forest-87',
+        'fallen-dream-84'
+    ]
+    normalize_X = True
+    # '''
+
+    ''' BMRM only biases
+    runs = [
+        'solar-field-203',
+        'pretty-lion-203',
+        'solar-shadow-203',
+        'fast-morning-203',
+        'happy-feather-207'
+    ]
+    # '''
+
     d_map = defaultdict(list)
     d = defaultdict(list)
 
@@ -204,34 +236,31 @@ if __name__ == '__main__':
     for split, run_name in enumerate(runs):
 
         print('-' * 10)
-        print(f'Split {split}')
+        print(f'Split: {split}     Run: {run_name}\n')
 
-        with open(f'{tst_files_root}/tst/split_{split}/shuffled/whole_file/y.pickle', 'rb') as f:
-            y_true = pickle.load(f)
-        
-        with open(f'{tst_files_root}/tst/split_{split}/shuffled/whole_file/features.pickle', 'rb') as f:
-            features = pickle.load(f)
+        Y, X = get_data(f'{tst_files_root}/tst/split_{split}/shuffled/whole_file', normalize_X=normalize_X)
 
         weights_root = f'{tst_files_root}/params/split_{split}'
 
         # evaluate using MAP inference
-        rvces_run_map = evaluate_map(features, y_true, weights_root, d_map)
+        rvces_run_map = evaluate_map(X, Y, weights_root, d_map)
         
         rvces_map.extend(rvces_run_map)
 
         # evaluate using most probable sequence (not trained)
-        evaluate(features, y_true, weights_root)
+        evaluate(X, Y, weights_root)
 
         # evaluate using most probable sequence (trained)
-        rvces_run = evaluate(features, y_true, weights_root, run_name, d)
+        rvces_run = evaluate(X, Y, weights_root, run_name, d)
         
         rvces.extend(rvces_run)
     
     rvces = np.array(rvces)
     
+    print('-' * 10)
     print('Final')
-    print(f'RVCE: {np.mean(rvces)} : {np.std(rvces)}')
-    print(f'RVCE MAP: {np.mean(rvces_map)} : {np.std(rvces_map)}')
+    print(f'STRUCTURED = {np.mean(rvces):.3f} ± {np.std(rvces):.3f}')
+    print(f'MAP        = {np.mean(rvces_map):.3f} ± {np.std(rvces_map):.3f}')
     print()
 
     plot(d, d_map)
