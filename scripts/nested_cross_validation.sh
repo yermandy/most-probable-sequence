@@ -1,0 +1,7 @@
+#!/bin/sh
+
+SPLIT=4 CROSS_VALIDATION_FOLD=0 sh learning.sh &
+SPLIT=4 CROSS_VALIDATION_FOLD=1 sh learning.sh &
+SPLIT=4 CROSS_VALIDATION_FOLD=2 sh learning.sh &
+SPLIT=4 CROSS_VALIDATION_FOLD=3 sh learning.sh &
+SPLIT=4 CROSS_VALIDATION_FOLD=4 sh learning.sh &
