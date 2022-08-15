@@ -5,7 +5,6 @@ from utils import *
 from learning import *
 import wandb
 import os
-from arguments import args
 
 
 class MarginRescallingLoss:
@@ -101,10 +100,8 @@ class MarginRescallingLossBiasesOnly:
         return self.w, b
 
 
-if __name__ == '__main__':
+def learn(args):
     # os.environ['WANDB_MODE'] = 'disabled'
-
-    print(args)
 
     args.optim = 'BMRM'
 
@@ -180,3 +177,11 @@ if __name__ == '__main__':
     })
 
     wandb.finish()
+
+
+if __name__ == '__main__':
+    from arguments import args
+    
+    print(args)
+    
+    learn(args)
