@@ -11,7 +11,7 @@ class MarginRescallingLoss:
     def __init__(self, w_shape, b_shape, X, Y, logger=None):
         self.w_shape = w_shape
         self.b_shape = b_shape
-        self.wb_shape = (w.shape[0], w.shape[1] + 1) 
+        self.wb_shape = (w_shape[0], w_shape[1] + 1) 
         self.X = X
         self.Y = Y
         self.logger = logger
@@ -101,7 +101,7 @@ class MarginRescallingLossBiasesOnly:
 
 
 def learn(args):
-    # os.environ['WANDB_MODE'] = 'disabled'
+    os.environ['WANDB_MODE'] = 'disabled'
 
     args.optim = 'BMRM'
 
