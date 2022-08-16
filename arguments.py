@@ -19,5 +19,6 @@ parser.add_argument('--tol_rel', type=float, default=.01, help='relative toleran
 parser.add_argument('--combine_trn_and_val', type=bool, action=argparse.BooleanOptionalAction, default=False, help='combine training and validation sets')
 parser.add_argument('--normalize_X', type=bool, action=argparse.BooleanOptionalAction, default=False, help='normalize samples from X to unit length')
 parser.add_argument('--root', type=str, default='files/031_more_validation_samples', help='root with files')
+parser.add_argument('--outputs_folder', type=str, default=None, help='specific folder for outputs')
 
 args = parser.parse_args()

@@ -139,8 +139,6 @@ def learn(args):
         'tst_folder': tst_folder,
     })
 
-    os.makedirs(f'outputs/{run_name}')
-
     w = np.load(f'{args.root}/params/split_{args.split}/w.npy')[:2 * args.Y]
     b = np.load(f'{args.root}/params/split_{args.split}/b.npy')[:2 * args.Y]
 
@@ -165,9 +163,13 @@ def learn(args):
 
     loss_tst, rvce_tst = inference(X_tst, Y_tst, w, b, calculate_loss=True)
     loss_val, rvce_val = inference(X_val, Y_val, w, b, calculate_loss=True)
-
-    np.save(f'outputs/{run_name}/w.npy', w)
-    np.save(f'outputs/{run_name}/b.npy', b)
+    
+    
+    outputs_folder = f'outputs/{run_name}' if args.outputs_folder == None else args.outputs_folder
+    
+    os.makedirs(outputs_folder, exist_ok=True)
+    np.save(f'{outputs_folder}/w.npy', w)
+    np.save(f'{outputs_folder}/b.npy', b)
 
     wandb.log({
         'final tst loss': loss_tst,
