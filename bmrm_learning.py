@@ -103,8 +103,6 @@ class MarginRescallingLossBiasesOnly:
 def learn(args):
     os.environ['WANDB_MODE'] = 'disabled'
 
-    args.optim = 'BMRM'
-
     run = wandb.init(project="audio-bmrm", entity="yermandy")
     run_name = wandb.run.name
     
@@ -183,6 +181,7 @@ def learn(args):
 
 if __name__ == '__main__':
     args = parse_args()
+    args.optim = 'BMRM'
     
     print(args)
     
