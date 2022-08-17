@@ -182,7 +182,7 @@ def learn(args):
 
 
 if __name__ == '__main__':
-    from arguments import args
+    args = parse_args()
     
     print(args)
     

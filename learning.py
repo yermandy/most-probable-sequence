@@ -1,7 +1,7 @@
 from dp import *
 import wandb
 import os
-from arguments import args
+from arguments import parse_args
 from most_probable_sequence import most_probable_sequence
 from utils import *
 from optim import AdamW, SGD
@@ -70,6 +70,7 @@ def filter_data(y, features):
 if __name__ == '__main__':
     os.environ['WANDB_MODE'] = 'disabled'
 
+    args = parse_args()
     print(args)
 
     run = wandb.init(project="most-probable-sequence", entity="yermandy")
