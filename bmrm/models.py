@@ -6,19 +6,18 @@ from bmrm.base import bmrm
 
 
 class GeneralModel(BaseEstimator):
-
     def __init__(
-            self,
-            k=1,
-            lmbda=1e-2,
-            bias=True,
-            solver='franc',
-            tol_rel=1e-3,
-            tol_abs=0,
-            max_iter=np.inf,
-            buff_size=500,
-            cp_cln=np.inf,
-            risk_transform=None
+        self,
+        k=1,
+        lmbda=1e-2,
+        bias=True,
+        solver="franc",
+        tol_rel=1e-3,
+        tol_abs=0,
+        max_iter=np.inf,
+        buff_size=500,
+        cp_cln=np.inf,
+        risk_transform=None,
     ):
         self.lmbda = lmbda
         self.bias = bias
@@ -39,12 +38,12 @@ class GeneralModel(BaseEstimator):
         else:
             X, y = check_X_y(X, y)
         if self.k % 1 > 0 or self.k < 1:
-            raise ValueError('Model parameter k must be a positive integer')
+            raise ValueError("Model parameter k must be a positive integer")
         self.k = int(self.k)
 
         if self.bias:
             X = np.hstack([X, np.ones((X.shape[0], 1))])
-        n_dim = X.shape[1]*self.k
+        n_dim = X.shape[1] * self.k
 
         self.X = X
         self.y = y
@@ -63,7 +62,7 @@ class GeneralModel(BaseEstimator):
             self.max_iter,
             self.buff_size,
             self.cp_cln,
-            verb
+            verb,
         )
         return self
 
@@ -77,18 +76,17 @@ class GeneralModel(BaseEstimator):
 
 
 class BinaryClassifier(GeneralModel, ClassifierMixin):
-
     def __init__(
-            self,
-            lmbda=1e-2,
-            bias=True,
-            solver='franc',
-            tol_rel=1e-3,
-            tol_abs=0,
-            max_iter=np.inf,
-            buff_size=500,
-            cp_cln=np.inf,
-            risk_transform=None
+        self,
+        lmbda=1e-2,
+        bias=True,
+        solver="franc",
+        tol_rel=1e-3,
+        tol_abs=0,
+        max_iter=np.inf,
+        buff_size=500,
+        cp_cln=np.inf,
+        risk_transform=None,
     ):
         super().__init__(
             lmbda=lmbda,
@@ -99,7 +97,7 @@ class BinaryClassifier(GeneralModel, ClassifierMixin):
             max_iter=max_iter,
             buff_size=buff_size,
             cp_cln=cp_cln,
-            risk_transform=risk_transform
+            risk_transform=risk_transform,
         )
 
     def predict(self, X):
@@ -118,19 +116,18 @@ class BinaryClassifier(GeneralModel, ClassifierMixin):
 
 
 class MultiClassifier(GeneralModel, ClassifierMixin):
-
     def __init__(
-            self,
-            k=2,
-            lmbda=1e-2,
-            bias=True,
-            solver='franc',
-            tol_rel=1e-3,
-            tol_abs=0,
-            max_iter=np.inf,
-            buff_size=500,
-            cp_cln=np.inf,
-            risk_transform=None
+        self,
+        k=2,
+        lmbda=1e-2,
+        bias=True,
+        solver="franc",
+        tol_rel=1e-3,
+        tol_abs=0,
+        max_iter=np.inf,
+        buff_size=500,
+        cp_cln=np.inf,
+        risk_transform=None,
     ):
         super().__init__(
             k=k,
@@ -142,7 +139,7 @@ class MultiClassifier(GeneralModel, ClassifierMixin):
             max_iter=max_iter,
             buff_size=buff_size,
             cp_cln=cp_cln,
-            risk_transform=risk_transform
+            risk_transform=risk_transform,
         )
 
     def predict(self, X):
@@ -157,25 +154,27 @@ class MultiClassifier(GeneralModel, ClassifierMixin):
     def risk(self, W):
         W = W.reshape(-1, self.X.shape[1])
         wtx = W @ self.X.T
-        witx = wtx[self.y.astype(int), jnp.linspace(0, self.y.shape[0] - 1, self.y.shape[0]).astype(int)]
+        witx = wtx[
+            self.y.astype(int),
+            jnp.linspace(0, self.y.shape[0] - 1, self.y.shape[0]).astype(int),
+        ]
         brc = wtx - jnp.array(witx) + 1
         brc = brc.at[np.diag_indices(np.min(brc.shape))].set(0)
         return jnp.max(brc, axis=0).mean()
 
 
 class Regressor(GeneralModel, RegressorMixin):
-
     def __init__(
-            self,
-            lmbda=1e-2,
-            bias=True,
-            solver='franc',
-            tol_rel=1e-3,
-            tol_abs=0,
-            max_iter=np.inf,
-            buff_size=500,
-            cp_cln=np.inf,
-            risk_transform=None
+        self,
+        lmbda=1e-2,
+        bias=True,
+        solver="franc",
+        tol_rel=1e-3,
+        tol_abs=0,
+        max_iter=np.inf,
+        buff_size=500,
+        cp_cln=np.inf,
+        risk_transform=None,
     ):
         super().__init__(
             lmbda=lmbda,
@@ -186,7 +185,7 @@ class Regressor(GeneralModel, RegressorMixin):
             max_iter=max_iter,
             buff_size=buff_size,
             cp_cln=cp_cln,
-            risk_transform=risk_transform
+            risk_transform=risk_transform,
         )
 
     def predict(self, X):
@@ -197,4 +196,4 @@ class Regressor(GeneralModel, RegressorMixin):
         return self.W_ @ X.T
 
     def risk(self, W):
-        return ((W @ self.X.T - self.y)**2).mean()
+        return ((W @ self.X.T - self.y) ** 2).mean()

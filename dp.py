@@ -14,18 +14,18 @@ def calculate_score(f, y):
 
 @numba.jit(nopython=True)
 def backtrack(Is: dict, F: np.array, c: int, Y: int):
-    n = len(Is)    
+    n = len(Is)
     C = F.shape[0]
     lb = max(0, c - C + 1)
     F = np.flipud(F)
     values = np.diag(F, k=c - C + 1)
-    
+
     y = np.argmax(np.asarray(values))
     objective = values[y]
 
     y += lb
     maximizers = [y]
-    
+
     for k in range(n + 1, 1, -1):
         c -= y
         y = Is[k][c, y]
@@ -48,47 +48,45 @@ def optimal_c(F, c_true, Y, n):
         if objective > objective_best:
             objective_best = objective
             c_best = c
-    
+
     return c_best, objective_best
-    
+
 
 def evaluate_loss(f, y_true):
     n = f.shape[0]
     Y = f.shape[1]
-    
+
     F, Is = dymanic_programming(f, n, Y)
-    
+
     c_best, objective_best = optimal_c(F, y_true.sum(), Y, n)
-    
+
     true_score = calculate_score(f, y_true)
-    
+
     margin_rescaling_loss = objective_best - true_score / n
-    
+
     # G, s, t = create_graph(f)
     # objective, y_pred = evaluate(f, G, s, t, c_best)
     # print('ilp objective', objective)
-    
+
     objective, y_tilde = backtrack(Is, F, c_best, Y)
     # print('dp objective', objective)
-    
-    return margin_rescaling_loss, y_tilde
-    
 
+    return margin_rescaling_loss, y_tilde
 
 
 @numba.jit(nopython=True)
 def dymanic_programming(f: np.array, n: int, Y: int):
     Is = {}
-    
+
     F_prev = np.zeros((Y, Y), dtype=np.float64)
     I = np.full((Y, Y), -1, dtype=np.int64)
     for c in range(0, Y):
         for y_k in range(0, Y):
             F_prev[c, y_k] = f[0, c, y_k]
             I[c, y_k] = c
-    
+
     Is[2] = I
-    
+
     C = Y
     for k in range(3, n + 2):
         C += Y - 1
@@ -116,17 +114,17 @@ def dymanic_programming(f: np.array, n: int, Y: int):
 def calc_grads(features, w, b, y_true, y_tilde):
     w_grad = np.zeros_like(w)
     b_grad = np.zeros_like(b)
-    
+
     for i, f in enumerate(features):
         z_pred = y_tilde[i] + y_tilde[i + 1]
         z_true = y_true[i] + y_true[i + 1]
-        
+
         w_grad[z_pred] += f
         w_grad[z_true] -= f
-        
+
         b_grad[z_pred] += 1
         b_grad[z_true] -= 1
-    
+
     # normalize
     n = len(y_true) - 1
     w_grad /= n
@@ -138,10 +136,10 @@ def calc_grads(features, w, b, y_true, y_tilde):
 def calc_f(features, w, b):
     n = len(features)
     Y = len(w) // 2
-    
+
     f = np.zeros((n, Y, Y))
     scores = features @ w.T + b.reshape(1, -1)
-    
+
     for i in range(n):
         for j in range(Y):
             for k in range(Y):
@@ -149,26 +147,26 @@ def calc_f(features, w, b):
     return f
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from utils import generate_random
-    
+
     f, y = generate_random()
-    
+
     n = f.shape[0]
     Y_trn = f.shape[1]
-    
+
     C_max = (Y_trn - 1) * n
 
     F, Is = dymanic_programming(f, n, Y_trn)
-        
-    print('DP')
+
+    print("DP")
     for c in range(0, C_max + 1):
         objective, maximizers = backtrack(Is, F, c, Y_trn)
         print(c, objective, maximizers)
-        
+
         # ? assert that DP objective calculated correctly
         longest_path = calculate_score(f, maximizers)
-        assert longest_path - objective < 1e-8, f'{longest_path} != {objective}'
-        
+        assert longest_path - objective < 1e-8, f"{longest_path} != {objective}"
+
         # ? assert that DP objective is feasible
-        assert c == maximizers.sum(), f'{c} != {maximizers.sum()}'
+        assert c == maximizers.sum(), f"{c} != {maximizers.sum()}"
