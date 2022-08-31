@@ -5,25 +5,25 @@ import pickle
 
 def generate_random(seed=42):
     np.random.seed(seed)
-    
+
     f = np.random.rand(4, 3, 3)
     f[0, 1, 0] = 2
     f[1, 0, 2] = 2
     f[2, 2, 2] = 2
     f[3, 2, 1] = 2
-    
+
     f[0, 0, 2] = 3
     f[1, 2, 1] = 1
     f[2, 1, 0] = 3
     f[3, 0, 2] = 2
-    
+
     f[0, 2, 1] = 3
     f[1, 1, 0] = 3
     f[2, 0, 1] = 3
     f[3, 1, 0] = 3
 
     y = np.array([2, 1, 0, 1, 0])
-    
+
     return f, y
 
 
@@ -52,22 +52,22 @@ def generate_random_from_params():
         for j in range(Y):
             for k in range(Y):
                 f[i, j, k] = outputs[j + k]
-    
+
     return f
 
 
 def print_dict_as_table(dictionary: dict):
-    table = [] 
+    table = []
     for k, v in dictionary.items():
         table.append([k, v])
     print(tabulate(table))
 
 
 def load(name):
-    with open(name, 'rb') as f:
+    with open(name, "rb") as f:
         return pickle.load(f)
 
-    
+
 def get_data(folders, normalize_X=False):
     folders = folders if type(folders) is list else [folders]
 
@@ -75,9 +75,9 @@ def get_data(folders, normalize_X=False):
     Y = []
 
     for folder in folders:
-        Y.extend(load(f'{folder}/y.pickle'))
+        Y.extend(load(f"{folder}/y.pickle"))
 
-        for x in load(f'{folder}/features.pickle'):
+        for x in load(f"{folder}/features.pickle"):
             x = x.astype(np.float64)
             x = x / np.linalg.norm(x, axis=1, keepdims=True) if normalize_X else x
             X.append(x)

@@ -4,6 +4,7 @@ from jax import grad, jit
 def autograd(func):
     def wrapper(*args):
         return func(*args), grad(func)(*args)
+
     return wrapper
 
 

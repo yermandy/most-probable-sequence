@@ -4,7 +4,7 @@ import numba
 
 @numba.jit(nopython=True)
 def most_probable_sequence(f: np.array):
-    """ Find the most probable sequence using dynamic programming
+    """Find the most probable sequence using dynamic programming
         Compute \max_{y_1,...,y_{n+1}} \sum_{i=1}^{n} f_i(y_i, y_{i+1})
 
     Parameters
@@ -18,7 +18,7 @@ def most_probable_sequence(f: np.array):
         Sequence of size (n + 1)
     """
     f = np.copy(f).astype(np.float64)
-    
+
     n = f.shape[0]
     Y = f.shape[1]
 
@@ -44,16 +44,16 @@ def most_probable_sequence(f: np.array):
         idx = I[idx, i]
         sequence.insert(0, idx)
     sequence = np.array(sequence)
-    
+
     return length, sequence
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from utils import generate_random
-    
+
     f, y = generate_random()
     length, sequence = most_probable_sequence(f)
-    
+
     print(sequence)
     print(length)
     print(y)
