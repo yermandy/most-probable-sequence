@@ -17,6 +17,7 @@ def bmrm(
     cp_cln=np.inf,
     verb=True,
     store_W=False,
+    W_init=None
 ):
 
     t0 = timer()
@@ -25,7 +26,7 @@ def bmrm(
     if buff_size > max_iter:
         buff_size = max_iter + 1
 
-    W = np.zeros(n_dim)
+    W = np.zeros(n_dim) if W_init is None else W_init
 
     # compute risk and its gradient
     tmp_time = timer()

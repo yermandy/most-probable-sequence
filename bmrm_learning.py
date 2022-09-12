@@ -37,10 +37,9 @@ class MarginRescallingLoss:
         dw = np.mean(dw, axis=0)
         db = np.mean(db, axis=0)
 
-        self.logger.log({"trn loss": L})
+        dW = np.hstack((dw, db.reshape(-1, 1))).flatten()
 
-        dW = np.hstack((dw, db.reshape(-1, 1)))
-        dW = dW.flatten()
+        self.logger.log({"trn loss": L})
 
         return L, dW
 
@@ -92,8 +91,18 @@ class MarginRescallingLossBiasesOnly:
         return self.w, b
 
 
-def learn(args, X_trn=None, Y_trn=None, X_val=None, Y_val=None, X_tst=None, Y_tst=None, w=None, b=None):
-    os.environ["WANDB_MODE"] = "disabled"
+def learn(
+    args,
+    X_trn=None,
+    Y_trn=None,
+    X_val=None,
+    Y_val=None,
+    X_tst=None,
+    Y_tst=None,
+    w=None,
+    b=None,
+):
+    os.environ["WANDB_MODE"] = args.wandb_mode
 
     run = wandb.init(project="audio-bmrm", entity="yermandy")
     run_name = wandb.run.name
@@ -138,15 +147,18 @@ def learn(args, X_trn=None, Y_trn=None, X_val=None, Y_val=None, X_tst=None, Y_ts
 
     if w is None:
         w = np.load(f"{args.root}/params/split_{args.split}/w.npy")[: 2 * args.Y]
-    
+
     if b is None:
         b = np.load(f"{args.root}/params/split_{args.split}/b.npy")[: 2 * args.Y]
 
+    loss_trn, rvce_trn = inference(X_trn, Y_trn, w, b, calculate_loss=True)
     loss_tst, rvce_tst = inference(X_tst, Y_tst, w, b, calculate_loss=True)
     loss_val, rvce_val = inference(X_val, Y_val, w, b, calculate_loss=True)
 
     wandb.log(
         {
+            "initial trn loss": loss_trn,
+            "initial trn rvce": rvce_trn,
             "initial tst loss": loss_tst,
             "initial tst rvce": rvce_tst,
             "initial val loss": loss_val,
@@ -156,11 +168,17 @@ def learn(args, X_trn=None, Y_trn=None, X_val=None, Y_val=None, X_tst=None, Y_ts
 
     if args.biases_only:
         loss = MarginRescallingLossBiasesOnly(w, b.shape, X_trn, Y_trn, wandb)
+        W_init = b
     else:
         loss = MarginRescallingLoss(w.shape, b.shape, X_trn, Y_trn, wandb)
+        W_init = np.hstack((w, b.reshape(-1, 1))).flatten()
 
     W, stats = bmrm(
-        loss, loss.get_trainable_params_count(), lmbda=args.reg, tol_rel=args.tol_rel
+        loss,
+        loss.get_trainable_params_count(),
+        lmbda=args.reg,
+        tol_rel=args.tol_rel,
+        W_init=W_init if args.pretrained_weights else None,
     )
 
     w, b = loss.get_params(W)

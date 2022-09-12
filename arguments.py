@@ -74,5 +74,8 @@ def parse_args():
     parser.add_argument(
         "--outputs_folder", type=str, default=None, help="specific folder for outputs"
     )
+    parser.add_argument(
+        "--wandb_mode", type=str, default="disabled"
+    )
 
     return parser.parse_args()
