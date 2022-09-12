@@ -233,10 +233,23 @@ if __name__ == "__main__":
     ]
     # """
 
+    tst_files_root = 'files/031_RX100_resized_128_sr_22050'
+
+
+    # BMRM files/036
+    
+    runs = [
+        'zesty-oath-246',
+        'elated-pond-244',
+        'golden-flower-247',
+        'dauntless-wildflower-245',
+        'toasty-frog-248'
+    ]
+    tst_files_root = 'files/036'
+
     d_map = defaultdict(list)
     d = defaultdict(list)
 
-    tst_files_root = "files/031_RX100_resized_128_sr_22050"
 
     rvces = []
     rvces_map = []
