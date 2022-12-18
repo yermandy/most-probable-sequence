@@ -160,7 +160,7 @@ if __name__ == "__main__":
     F, Is = dymanic_programming(f, n, Y_trn)
 
     print("DP")
-    for c in range(0, C_max + 1):
+    for c in range(0, C_max + 3):
         objective, maximizers = backtrack(Is, F, c, Y_trn)
         print(c, objective, maximizers)
 
