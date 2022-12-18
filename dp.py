@@ -9,7 +9,7 @@ except ImportError as e:
 
 
 def calculate_score(f, y):
-    return np.sum(f[i, y[i], y[i + 1]] for i in range(len(f)))
+    return np.sum([f[i, y[i], y[i + 1]] for i in range(len(f))])
 
 
 @numba.jit(nopython=True)
